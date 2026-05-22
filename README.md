@@ -98,6 +98,7 @@ $$
 $$
 
 When the transmitter calculates $\mathbf{W}_M \cdot \mathbf{D}$, it streams each column vector $\mathbf{d}_n$ through a single, pipelined 1-D FFT/IFFT core sequentially, storing the intermediate outputs in a RAM buffer to flip the matrix rows sideways for the next stage.
+
 ---
 ### **Day 2 (May 19): Foundational Understanding of The Algorithm**
 
