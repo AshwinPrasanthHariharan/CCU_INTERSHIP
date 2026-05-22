@@ -327,4 +327,27 @@ This block converts a raw binary stream into complex 16-QAM symbols and packs th
 - `nibbles = raw_bitstream.reshape(M * N, 4)` groups the serial stream into 4-bit chunks, one nibble per QAM symbol.
 - The `for` loop maps the first two bits to the In-Phase coordinate and the last two bits to the Quadrature coordinate, then combines them into a complex value.
 - `D = np.array(qam_symbols).reshape(M, N)` stores the symbols row-by-row into the `M x N` Delay-Doppler grid so the next ISFFT stage can transform the matrix into the time-frequency domain.
+<div align="center">
+  <img src="./assets/fig3(QAM-constallation).png" alt="IFFT and Pulse Shaping Stage in Multi-carrier Modulator Architecture" width="500"/>
+  <br/>
+  <b>Figure 3: Visualization of the 16-QAM DD Constellation</b><br>
+</div>
+
+##### **Stage 3: ISFFT Domain Transformation (The Matrix Operator Sandwich)**
+
+```python
+# STAGE 3: ISFFT DOMAIN TRANSFORMATION (THE MATRIX OPERATOR SANDWICH)
+# =====================================================================
+# Generate scale-normalized forward and inverse unitary transformation matrices
+W_M = (1.0 / np.sqrt(M)) * np.fft.fft(np.eye(M))
+W_N_inv = (1.0 / np.sqrt(N)) * np.fft.ifft(np.eye(N)) * N  # Normalized scaling factor
+# Execute 2D matrix transformation to yield Time-Frequency Grid X_TF
+X_TF = np.dot(np.dot(W_M, D), W_N_inv)
+```
+
+- `W_M` is the normalized forward DFT matrix. Multiplying it from the left transforms each Delay axis column into the Frequency/Subcarrier direction.
+- `W_N_inv` is the normalized inverse DFT matrix. Multiplying it from the right transforms each Doppler axis row into the Time Slot direction.
+- The scale factors `1 / sqrt(M)` and `1 / sqrt(N)` keep the transform unitary, which preserves energy and avoids artificial gain during verification.
+- `X_TF = np.dot(np.dot(W_M, D), W_N_inv)` is the ISFFT sandwich itself. It converts the Delay-Doppler frame `D` into the Time-Frequency grid `X_TF` that the Heisenberg transmit stage consumes next.
+
 ---
