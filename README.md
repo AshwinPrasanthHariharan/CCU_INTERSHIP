@@ -397,7 +397,7 @@ print(f"Final FPGA Digital Output: {final_tx_signal.shape} total samples heading
 <div align="center">
   <img src="./assets/fig4.1.png" alt="sampled tx_signal" width="1000" style="max-width:90%;height:auto;" />
   <br/>
-  <b>Figure 3: Visualization of the Tx_Signal(digitized)</b><br>
+  <b>Figure 4: Visualization of the Tx_Signal(digitized)</b><br>
 </div>
 
 
@@ -416,6 +416,6 @@ This section is useful for explaining the Whittaker-Shannon sampling theorem in 
 <div align="center">
   <img src="./assets/fig4.1.png" alt="sampled tx_signal" width="1000" style="max-width:90%;height:auto;" />
   <br/>
-  <b>Figure 3: Visualization of the Tx_Signal(After interpollation)</b><br>
+  <b>Figure 5: Visualization of the Tx_Signal(After interpollation)</b><br>
 </div>
 ---
