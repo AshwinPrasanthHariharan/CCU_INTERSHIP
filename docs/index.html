@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Learning Log — Rendered with KaTeX</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+    <style>
+        body {
+            font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 18px;
+            color: #111
+        }
+
+        pre {
+            background: #f6f8fa;
+            padding: 12px;
+            border-radius: 6px;
+            overflow: auto
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #0b3d91
+        }
+
+        .markdown-body img {
+            max-width: 100%;
+            height: auto
+        }
+    </style>
+</head>
+
+<body>
+    <main class="markdown-body" id="content">Loading...</main>
+
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.3.2/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it-katex@3.0.1/dist/markdownit-katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+    <script>
+        const md = window.markdownit({ html: true, linkify: true }).use(window.markdownitKatex);
+        fetch('learning_log.md')
+            .then(r => {
+                if (!r.ok) throw new Error('Failed to load learning_log.md');
+                return r.text();
+            })
+            .then(text => {
+                document.getElementById('content').innerHTML = md.render(text);
+            })
+            .catch(e => { document.getElementById('content').textContent = e.message });
+    </script>
+</body>
+
+</html>
