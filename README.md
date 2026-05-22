@@ -328,7 +328,7 @@ This block converts a raw binary stream into complex 16-QAM symbols and packs th
 - The `for` loop maps the first two bits to the In-Phase coordinate and the last two bits to the Quadrature coordinate, then combines them into a complex value.
 - `D = np.array(qam_symbols).reshape(M, N)` stores the symbols row-by-row into the `M x N` Delay-Doppler grid so the next ISFFT stage can transform the matrix into the time-frequency domain.
 <div align="center">
-  <img src="./assets/fig3(QAM-constallation).png" alt="IFFT and Pulse Shaping Stage in Multi-carrier Modulator Architecture" width="500"/>
+  <img src="./assets/fig3(QAM-constallation).png" alt="16_QAM constellation" width="700"/>
   <br/>
   <b>Figure 3: Visualization of the 16-QAM DD Constellation</b><br>
 </div>
@@ -350,4 +350,72 @@ X_TF = np.dot(np.dot(W_M, D), W_N_inv)
 - The scale factors `1 / sqrt(M)` and `1 / sqrt(N)` keep the transform unitary, which preserves energy and avoids artificial gain during verification.
 - `X_TF = np.dot(np.dot(W_M, D), W_N_inv)` is the ISFFT sandwich itself. It converts the Delay-Doppler frame `D` into the Time-Frequency grid `X_TF` that the Heisenberg transmit stage consumes next.
 
+##### **Stage 4-6: Heisenberg Synthesis (The Hardware RTL Way)**
+
+```python
+# =====================================================================
+# STAGE 4: HEISENBERG SYNTHESIS (THE HARDWARE RTL WAY)
+# =====================================================================
+# The discrete Heisenberg Transform applies an M-point IFFT along the 
+# subcarriers (rows) of each independent time slot (columns).
+
+# Apply unitary IFFT down the columns (axis=0). 
+# np.fft.ifft divides by M, so we multiply by sqrt(M) to maintain unitary power scaling.
+time_domain_slots = np.fft.ifft(X_TF, axis=0) * np.sqrt(M)
+
+# =====================================================================
+# STAGE 5: DISCRETE CYCLIC PREFIX GUARD INJECTION
+# =====================================================================
+# Instead of looping, we slice the tails off all 4 time slots simultaneously.
+# N_CP = 2 (We copy the exact 2 discrete digital samples from the bottom of the matrix)
+
+cp_tails = time_domain_slots[-N_CP:, :]
+
+# Stack the copied tails directly on top of the original time slots
+guarded_slots = np.vstack((cp_tails, time_domain_slots))
+
+# =====================================================================
+# STAGE 6: FPGA SERIALIZATION (PARALLEL TO SERIAL)
+# =====================================================================
+# The FPGA calculates a whole slot in parallel, but must push it out to the DAC
+# one sample at a time, slot by slot chronologically.
+# 'F' (Fortran-order) flattens the matrix column-by-column, exactly mimicking 
+# the hardware shift registers pushing data to the DAC bus!
+
+final_tx_signal = guarded_slots.flatten('F')
+# --- Check the true digital sizing ---
+print(f"Guarded Slot Matrix Size : {guarded_slots.shape} (6 samples x 4 slots)")
+print(f"Final FPGA Digital Output: {final_tx_signal.shape} total samples heading to DAC.")
+```
+
+- `time_domain_slots = np.fft.ifft(X_TF, axis=0) * np.sqrt(M)` performs the Heisenberg synthesis by converting each Time-Frequency column into an $M$-sample time-domain slot while keeping the transform power-normalized.
+- `cp_tails = time_domain_slots[-N_CP:, :]` extracts the last `N_CP` samples from every slot so they can be reused as the cyclic prefix.
+- `guarded_slots = np.vstack((cp_tails, time_domain_slots))` prepends the copied prefix samples to each slot, protecting the useful payload against delay spread and inter-symbol interference.
+- `final_tx_signal = guarded_slots.flatten('F')` serializes the 2D slot matrix column-by-column into a single DAC-ready 1D stream, matching the FPGA output order.
+- The `print()` checks confirm the guarded matrix shape and final sample count before moving on to waveform validation.
+
+<div align="center">
+  <img src="./assets/fig4.1.png" alt="sampled tx_signal" width="1000" style="max-width:90%;height:auto;" />
+  <br/>
+  <b>Figure 3: Visualization of the Tx_Signal(digitized)</b><br>
+</div>
+
+
+##### **Stage 7: Whittaker-Shannon Interpolation View of the Serialized Output**
+
+The final visualization cell in [scripts/python/Tx understanding.ipynb](scripts/python/Tx%20understanding.ipynb) turns the serialized DAC stream into a sinc-based reconstruction plot.
+
+- `discrete_samples = final_tx_signal.real` extracts the real-valued baseband samples that will be used for the interpolation demo.
+- `sample_indices = np.arange(len(discrete_samples))` assigns each discrete sample a fixed timeline position.
+- `t_analog = np.linspace(-2, len(discrete_samples) + 1, 1000)` creates a dense continuous-time axis so the sinc tails and overlap regions can be seen clearly.
+- Inside the loop, `np.sinc(t_analog - n)` generates one shifted sinc pulse per sample and scales it by that sample's amplitude.
+- `summed_analog_wave += individual_sinc` accumulates all shifted pulses into the final reconstructed waveform, showing how ideal bandlimited interpolation rebuilds the continuous signal from discrete values.
+- The stem plot overlays the original sample positions on top of the sinc sum so the notebook can visually confirm that the reconstructed curve passes through every discrete point.
+
+This section is useful for explaining the Whittaker-Shannon sampling theorem in the context of the OTFS transmitter chain: the FPGA emits discrete values, and the sinc-based plot illustrates how those samples relate to the ideal continuous-time analog waveform that a DAC and pulse-shaping filter would produce.
+<div align="center">
+  <img src="./assets/fig4.1.png" alt="sampled tx_signal" width="1000" style="max-width:90%;height:auto;" />
+  <br/>
+  <b>Figure 3: Visualization of the Tx_Signal(After interpollation)</b><br>
+</div>
 ---
