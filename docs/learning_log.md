@@ -75,7 +75,7 @@ This repository tracks my daily progress, code models, and RTL architecture impl
   $$
     An isolated vertical column vector $\mathbf{d}_n$ represents a single discrete Doppler bin containing all $M$ delay rows:
   $$
-  \mathbf{d}_n = \begin{bmatrix} d_{0,n} \\\ d_{1,n} \\\ d_{2,n} \\\ \vdots \\\ d_{M-1,n} \end{bmatrix}
+  \mathbf{d}_n = \begin{bmatrix} d_{0,n} \\ d_{1,n} \\ d_{2,n} \\ \vdots \\ d_{M-1,n} \end{bmatrix}
   $$
     When the transmitter calculates $\mathbf{W}_M \cdot \mathbf{D}$, it streams each column vector $\mathbf{d}_n$ through a single, pipelined 1-D FFT/IFFT core sequentially, storing the intermediate outputs in a RAM buffer to flip the matrix rows sideways for the next stage.
 * **Day 2 (May 19):** Foundational Understanding of The algorithm
