@@ -20,7 +20,7 @@ This repository tracks my daily progress, code models, and RTL architecture impl
         2. Understand the difference between DFT and OTFS.
         3. Understand the Delay–Doppler information matrix ($D$).
     ##### 1. DFT (the frequency domain )
-     let $\mathbf{x}[n]$ be a discetrete time signal:
+     let $\mathbf{x}[n]$ be a discrete time signal:
      then its DTFT $\mathbf{X}[e^{j\omega}]$ is given by
      ```math
      \mathbf{X}(e^{j\omega})
