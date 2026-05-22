@@ -98,7 +98,6 @@ $$
 $$
 
 When the transmitter calculates $\mathbf{W}_M \cdot \mathbf{D}$, it streams each column vector $\mathbf{d}_n$ through a single, pipelined 1-D FFT/IFFT core sequentially, storing the intermediate outputs in a RAM buffer to flip the matrix rows sideways for the next stage.
-
 ---
 ### **Day 2 (May 19): Foundational Understanding of The Algorithm**
 
@@ -243,6 +242,37 @@ When the IFFT block completes its mixing cycle, it outputs sharp, rigid digital 
 4. Analyze practical hardware implications of matrix streaming, FFT scheduling, and waveform synthesis.
 5. Establish a trusted floating-point golden reference prior to RTL and fixed-point migration.
 
+##### **Stage 2: 16-QAM Gray Constellation Mapping & Geometric Matrix Loading**
+
+```python
+# STAGE 2: 16-QAM GRAY CONSTELLATION MAPPING & GEOMETRIC MATRIX LOADING
+# Total bits required for a single transmission frame = M * N * 4 bits (16-QAM)
+np.random.seed(42)  # Set static seed for reproducible RTL bit-matching
+total_bits_needed = M * N * 4
+raw_bitstream = np.random.randint(0, 2, total_bits_needed)
+
+# 16-QAM Gray Code Lookup Map (Maps bit pairs to physical coordinate scales)
+gray_lut = {(0,0): -3, (0,1): -1, (1,1): +1, (1,0): +3}
+nibbles = raw_bitstream.reshape(M * N, 4)
+qam_symbols = []
+
+for nibble in nibbles:
+  i_coordinate = gray_lut[(nibble[0], nibble[1])]
+  q_coordinate = gray_lut[(nibble[2], nibble[3])]
+  qam_symbols.append(complex(i_coordinate, q_coordinate))
+
+# Pack complex symbols row-major into the spatial Delay-Doppler Matrix D
+D = np.array(qam_symbols).reshape(M, N)
+```
+
+- `np.random.seed(42)` fixes the pseudo-random sequence so the simulated bitstream is reproducible and matches RTL vector checks.
+- `total_bits_needed = M * N * 4` computes how many raw bits are required to fill a single OTFS frame at 16-QAM (4 bits per symbol).
+- `raw_bitstream` is a flat test vector of zeros and ones used in verification runs; replace this with real input when integrating the live ingestion interface.
+- `gray_lut` is the Gray-coded amplitude mapping from two-bit pairs to physical I/Q amplitude levels. The mapping reduces single-bit symbol errors under small noise excursions.
+- `nibbles = raw_bitstream.reshape(M * N, 4)` packs the serial bitstream into 4-bit nibbles (one symbol per nibble).
+- The loop converts each nibble into an In-Phase and Quadrature coordinate and assembles a complex symbol list.
+- `D = np.array(qam_symbols).reshape(M, N)` places the symbols row-major into the Delay–Doppler storage matrix so the ISFFT stage can operate on the full frame.
+
 ##### **Stage 1: System Specifications & Initialization Constants**
 
 ```python
@@ -267,5 +297,34 @@ print(f"Subcarrier Bandwidth: {Delta_f} Hz | Useful Slot Boundary: {T*1000:.1f} 
 - `samples_per_slot = M` makes each slot use `M` samples in this simplified hardware model.
 - `oversampling_factor = 4` increases sample density so the waveform trace looks smoother and closer to a continuous analog signal.
 - The `print()` lines are status checks that confirm the chosen grid geometry and timing before the rest of the pipeline executes.
+##### **Stage 2: 16-QAM Gray Constellation Mapping & Geometric Matrix Loading**
+```python
+# STAGE 2: 16-QAM GRAY CONSTELLATION MAPPING & GEOMETRIC MATRIX LOADING
+# Total bits required for a single transmission frame = M * N * 4 bits (16-QAM)
+np.random.seed(42)  # Set static seed for reproducible RTL bit-matching
+total_bits_needed = M * N * 4
+raw_bitstream = np.random.randint(0, 2, total_bits_needed)
 
+# 16-QAM Gray Code Lookup Map (Maps bit pairs to physical coordinate scales)
+gray_lut = {(0,0): -3, (0,1): -1, (1,1): +1, (1,0): +3}
+nibbles = raw_bitstream.reshape(M * N, 4)
+qam_symbols = []
+
+for nibble in nibbles:
+    i_coordinate = gray_lut[(nibble[0], nibble[1])]
+    q_coordinate = gray_lut[(nibble[2], nibble[3])]
+    qam_symbols.append(complex(i_coordinate, q_coordinate))
+
+# Pack complex symbols row-major into the spatial Delay-Doppler Matrix D
+D = np.array(qam_symbols).reshape(M, N)
+```
+This block converts a raw binary stream into complex 16-QAM symbols and packs them into the Delay-Doppler matrix `D`.
+
+- `np.random.seed(42)` fixes the random sequence so the generated bitstream is reproducible every time the notebook runs.
+- `total_bits_needed = M * N * 4` computes the exact number of bits required for one full `M x N` frame, because each 16-QAM symbol carries 4 bits.
+- `raw_bitstream = np.random.randint(0, 2, total_bits_needed)` creates the test input as a flat stream of `0` and `1` values.
+- `gray_lut` defines the Gray-coded amplitude levels for each bit pair. Adjacent constellation points differ by only one bit, which helps reduce bit errors under noise.
+- `nibbles = raw_bitstream.reshape(M * N, 4)` groups the serial stream into 4-bit chunks, one nibble per QAM symbol.
+- The `for` loop maps the first two bits to the In-Phase coordinate and the last two bits to the Quadrature coordinate, then combines them into a complex value.
+- `D = np.array(qam_symbols).reshape(M, N)` stores the symbols row-by-row into the `M x N` Delay-Doppler grid so the next ISFFT stage can transform the matrix into the time-frequency domain.
 ---
