@@ -22,32 +22,32 @@ This repository tracks my daily progress, code models, and RTL architecture impl
     ##### 1. DFT (the frequency domain )
      let $\mathbf{x}[n]$ be a discetrete time signal:
      then its DTFT $\mathbf{X}[e^{j\omega}]$ is given by
-     $$
-    \mathbf{X}(e^{j\omega})
-    =
-    \sum_{n=-\infty}^{\infty}
-    \mathbf{x}[n] e^{-j\omega n}
-    $$
+  $$
+  \mathbf{X}(e^{j\omega})
+  =
+  \sum_{n=-\infty}^{\infty}
+  \mathbf{x}[n] e^{-j\omega n}
+  $$
     
     ##### 2. The Transition to the Discrete Fourier Transform (DFT)
     Because digital hardware cannot compute or store an infinite, continuous frequency spectrum $X(e^{j\omega})$, the DFT samples the DTFT at $N$ evenly spaced discrete frequency bins ($\omega_k = \frac{2\pi k}{N}$).
 
     For a finite-length vector $\mathbf{x}$ of length $M$, this operation simplifies into a clean matrix-vector multiplication:
-    $$
-    \mathbf{X} = \mathbf{W} \cdot \mathbf{x}
-    $$
+  $$
+  \mathbf{X} = \mathbf{W} \cdot \mathbf{x}
+  $$
     Where $\mathbf{W}_M$ is an $M \times M$ square transformation matrix built using the standard symmetric twiddle factors:
-    $$
-    W_M = e^{-j\frac{2\pi}{M}}
-    $$
+  $$
+  W_M = e^{-j\frac{2\pi}{M}}
+  $$
 
     ##### 3. Scaling 1-D DFT to 2-D DFT
     When a signal varies across two separate dimensions simultaneously (like a 2D grid of pixels or spatial data), a standard 2-D DFT processes horizontal and vertical variations at the same time. 
 
     Mathematically, this is executed as a "matrix sandwich" by applying the 1-D DFT matrix twice. For an $M \times N$ matrix $\mathbf{D}$:
-    $$
-    \mathbf{X}_{2D} = \mathbf{W}_M \cdot \mathbf{D} \cdot \mathbf{W}_N
-    $$
+  $$
+  \mathbf{X}_{2D} = \mathbf{W}_M \cdot \mathbf{D} \cdot \mathbf{W}_N
+  $$
     * Multiplying by $\mathbf{W}_M$ from the **left** applies the 1-D transform down every individual **column**.
     * Multiplying by $\mathbf{W}_N$ from the **right** applies the 1-D transform across every individual **row** (leveraging matrix symmetry where $\mathbf{W}^T = \mathbf{W}$).
     
@@ -55,9 +55,9 @@ This repository tracks my daily progress, code models, and RTL architecture impl
     While a standard 2-D DFT runs a *forward* transform on both the rows and columns to map data completely from space to frequency, the OTFS transmitter relies on the **Inverse Symplectic Finite Fourier Transform (ISFFT)**. 
 
     The ISFFT converts your data from the Delay-Doppler domain into a Time-Frequency grid ($\mathbf{X}_{TF}$) using a hybrid matrix multiplication sandwich:
-    $$
-    \mathbf{X}_{TF} = \mathbf{W}_M \cdot \mathbf{D} \cdot \mathbf{W}_{inv, N}
-    $$
+  $$
+  \mathbf{X}_{TF} = \mathbf{W}_M \cdot \mathbf{D} \cdot \mathbf{W}_{inv, N}
+  $$
     * **Left-Side Multiplication ($\mathbf{W}_M \cdot \mathbf{D}$):** Runs a forward 1-D DFT to transform the columns (moving the Delay domain into the Frequency domain).
     * **Right-Side Multiplication ($\mathbf{D} \cdot \mathbf{W}_{inv, N}$):** Runs an *Inverse* 1-D DFT matrix ($\mathbf{W}_{inv}$, where the twiddle exponent flips to a positive sign: $e^{+j\frac{2\pi}{N}}$) to transform the rows (moving the Doppler domain into the Time domain).
 
@@ -70,13 +70,13 @@ This repository tracks my daily progress, code models, and RTL architecture impl
     In digital hardware, an FPGA cannot compute a full 2-D matrix multiplication simultaneously without blowing up the resource budget. Physically, it processes the matrix **one column vector at a time**.
 
     We can view the Delay-Doppler matrix $\mathbf{D}$ as a parallel array of $N$ independent column vectors standing side-by-side:
-    $$
-    \mathbf{D} = \begin{bmatrix} \mathbf{d}_0 & \mathbf{d}_1 & \mathbf{d}_2 & \dots & \mathbf{d}_{N-1} \end{bmatrix}
-    $$
+  $$
+  \mathbf{D} = \begin{bmatrix} \mathbf{d}_0 & \mathbf{d}_1 & \mathbf{d}_2 & \dots & \mathbf{d}_{N-1} \end{bmatrix}
+  $$
     An isolated vertical column vector $\mathbf{d}_n$ represents a single discrete Doppler bin containing all $M$ delay rows:
-    $$
-    \mathbf{d}_n = \begin{bmatrix} d_{0,n} \\ d_{1,n} \\ d_{2,n} \\ \vdots \\ d_{M-1,n} \end{bmatrix}
-    $$
+  $$
+  \mathbf{d}_n = \begin{bmatrix} d_{0,n} \\ d_{1,n} \\ d_{2,n} \\ \vdots \\ d_{M-1,n} \end{bmatrix}
+  $$
     When the transmitter calculates $\mathbf{W}_M \cdot \mathbf{D}$, it streams each column vector $\mathbf{d}_n$ through a single, pipelined 1-D FFT/IFFT core sequentially, storing the intermediate outputs in a RAM buffer to flip the matrix rows sideways for the next stage.
 * **Day 2 (May 19):** Foundational Understanding of The algorithm
     - **Objectives**
@@ -97,27 +97,27 @@ This repository tracks my daily progress, code models, and RTL architecture impl
 
     ##### 1. Bitstream Ingestion & 16-QAM Gray Mapping
     The input interface ingests a raw, flat 1D serial binary bitstream $\mathbf{b}$. The exact frame capacity required to perfectly populate a single transmission block is determined by the dimensions of the matrix grid and the modulation depth:
-    $$
-    \text{Total Bits Per Frame} = M \times N \times \log_2(M_{\text{QAM}})
-    $$
+  $$
+  \text{Total Bits Per Frame} = M \times N \times \log_2(M_{\text{QAM}})
+  $$
     *   **Data Partitioning:** For a $16\text{-QAM}$ architecture, the stream is parsed sequentially into discrete $4\text{-bit}$ segments (nibbles) $[b_0, b_1, b_2, b_3]$.
     *   **Gray-Coded Constellation Mapping:** The nibble is split into an In-Phase bit pair $(b_0b_1)$ and a Quadrature bit pair $(b_2b_3)$. They are mapped into physical coordinate scalars using a Gray code mapping rule. This arrangement ensures that adjacent spatial constellation coordinates differ by a Hamming distance of exactly 1 bit, drastically reducing bit-error rates (BER) if noise causes a received state to drift into an adjacent decision boundary:
-        $$
-        \text{Mapping Array: } \mathbf{00} \rightarrow -3, \quad \mathbf{01} \rightarrow -1, \quad \mathbf{11} \rightarrow +1, \quad \mathbf{10} \rightarrow +3
-        $$
+  $$
+  \text{Mapping Array: } \mathbf{00} \rightarrow -3, \quad \mathbf{01} \rightarrow -1, \quad \mathbf{11} \rightarrow +1, \quad \mathbf{10} \rightarrow +3
+  $$
     *   **Output Vector:** Each 4-bit block results in a complex coordinate point: $s = s_I + j \cdot s_Q$.
 
     ##### 2. Geometric Data Allocation in Matrix $\mathbf{D}$
     The mapped complex QAM symbols are written row-by-row (**row-major mapping**) into local Block RAM allocation grids to construct the **Delay-Doppler Matrix $\mathbf{D} \in \mathbb{C}^{M \times N}$**:
 
-    $$
-    \mathbf{D} = \begin{bmatrix} 
-    D[0,0] & D[0,1] & \cdots & D[0,N-1] \\
-    D[1,0] & D[1,1] & \cdots & D[1,N-1] \\
-    \vdots & \vdots & \ddots & \vdots \\
-    D[M-1,0] & D[M-1,1] & \cdots & D[M-1,N-1]
-    \end{bmatrix}
-    $$
+  $$
+  \mathbf{D} = \begin{bmatrix} 
+  D[0,0] & D[0,1] & \cdots & D[0,N-1] \\
+  D[1,0] & D[1,1] & \cdots & D[1,N-1] \\
+  \vdots & \vdots & \ddots & \vdots \\
+  D[M-1,0] & D[M-1,1] & \cdots & D[M-1,N-1]
+  \end{bmatrix}
+  $$
 
     *   **Physical Channel Properties:** Unlike standard multi-carrier modulations (like 4G/5G OFDM), Matrix $\mathbf{D}$ does not represent time or frequency yet. It represents the physical geometry of the wireless environment:
         *   **Rows ($M$ Delay bins):** Represent physical propagation delays ($\tau$), corresponding directly to echo paths and target distances in the field.
@@ -126,9 +126,9 @@ This repository tracks my daily progress, code models, and RTL architecture impl
     ##### 3. Domain Transformation via the ISFFT Sandwich
     To prepare these environmental coordinates for physical transmission, the matrix must be rotated into the traditional time-frequency domain. This is achieved by computing the Inverse Symplectic Finite Fourier Transform (ISFFT):
 
-    $$
-    \mathbf{X}_{TF} = \mathbf{W}_M \cdot \mathbf{D} \cdot \mathbf{W}_N^{-1}
-    $$
+  $$
+  \mathbf{X}_{TF} = \mathbf{W}_M \cdot \mathbf{D} \cdot \mathbf{W}_N^{-1}
+  $$
 
     *   **The Transform Mechanics:**
         1.  $\mathbf{W}_M \in \mathbb{C}^{M \times M}$ is a normalized forward DFT matrix multiplied from the **left**. This processes the data vertically down the columns, translating the **Delay axis into a Frequency Subcarrier axis**.
@@ -163,9 +163,9 @@ This repository tracks my daily progress, code models, and RTL architecture impl
     *   **Step A: Vertical Column Stride Extraction:** The engine isolates Column $n$ from the $\mathbf{X}_{TF}$ matrix. This vertical column contains $M$ unique complex values. Each row element $m$ represents a specific radio frequency lane (a subcarrier tone). The number itself tells the transmitter how to configure that specific subcarrier: its size controls the tone's volume (amplitude) and its complex angle controls where the wave begins its rotation (phase).
     *   **Step B: Multi-Carrier Mixing via 1D IFFT:** The extracted column is pushed directly through an $M$-point 1D IFFT processing block. The IFFT combines all $M$ frequency tones simultaneously. It scales each sine wave by its corresponding QAM vector instruction and mixes them together, outputting a block of $M$ discrete time-domain samples.
     *   **Step C: Mathematical Continuous-Time Superposition:** By summing the energy of all modulated subcarrier waves across every single time slot column, the Heisenberg engine yields the unified system equation:
-    $$
-    s(t) = \sum_{n=0}^{N-1} \sum_{m=0}^{M-1} X_{TF}[m, n] \cdot \text{g}_{tx}(t - nT) \cdot e^{j 2 \pi m \Delta f (t - nT)}
-    $$
+  $$
+  s(t) = \sum_{n=0}^{N-1} \sum_{m=0}^{M-1} X_{TF}[m, n] \cdot \text{g}_{tx}(t - nT) \cdot e^{j 2 \pi m \Delta f (t - nT)}
+  $$
     Where $\text{g}_{tx}(t)$ represents the transmitted pulse-shaping filter window, $T$ represents the time slot duration ($1/\Delta f$), and $\Delta f$ defines the subcarrier spacing intervals.
 
     ##### 2. The Physics of Pulse-Shaping & Sinc Interlapping
