@@ -386,7 +386,7 @@ The final visualization cell in [scripts/python/Tx understanding.ipynb](scripts/
 
 This section is useful for explaining the Whittaker-Shannon sampling theorem in the context of the OTFS transmitter chain: the FPGA emits discrete values, and the sinc-based plot illustrates how those samples relate to the ideal continuous-time analog waveform that a DAC and pulse-shaping filter would produce.
 <div align="center">
-  <img src="./assets/fig4.1.png" alt="sampled tx_signal" width="1000" style="max-width:90%;height:auto;" />
+  <img src="./assets/fig5.png" alt="sampled tx_signal" width="1000" style="max-width:90%;height:auto;" />
   <br/>
   <b>Figure 5: Visualization of the Tx_Signal(After interpollation)</b><br>
 </div>
