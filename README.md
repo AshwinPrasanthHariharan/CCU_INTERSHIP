@@ -538,9 +538,8 @@ Moving away:
 
 The Doppler shift is denoted by:
 
-\[
-\nu
-\]
+
+$\nu$
 
 ---
 
@@ -579,10 +578,10 @@ The received signal is modeled as:
 
 Where:
 
-- \( h_i \) = fading/amplitude scaling
-- \( \tau_i \) = delay spread component
-- \( \nu_i \) = Doppler shift
-- \( n(t) \) = thermal noise
+- $h_i$ = fading/amplitude scaling
+- $\tau_i$ = delay spread component
+- $\nu_i$ = Doppler shift
+- $n(t)$ = thermal noise
 
 This equation mathematically models:
 
