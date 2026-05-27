@@ -466,9 +466,9 @@ Since radio waves travel at the speed of light:
 
 Where:
 
-- \( \tau_i \) = delay of path \(i\)
-- \( d_i \) = distance traveled
-- \( c \) = speed of light
+- $\tau_i$ = delay of path $\mathbf{i}$
+- $d_i$ = distance traveled
+-  c = speed of light
 
 ---
 
@@ -630,7 +630,7 @@ The receiver performs the reverse operation.
 
 ###### Receiver Stages
 
-1. Step 1 — ADC & CP Removal
+**Step 1 — ADC & CP Removal**
 
 The antenna receives:
 
@@ -647,7 +647,7 @@ This removes the most corrupted ISI region.
 
 ---
 
-2. Step 2 — Wigner Transform (FFT)
+**Step 2 — Wigner Transform (FFT)**
 
 Receiver performs:
 
@@ -657,13 +657,11 @@ This reconstructs the:
 
 ##### Time-Frequency Grid
 
-$$
-X_{TF}
-$$
+$X_{TF}$
 
 ---
 
-3. Step 3 — Symplectic FFT (SFFT)
+ **Step 3 — Symplectic FFT (SFFT)**
 
 Receiver transforms data back into:
 
@@ -675,9 +673,8 @@ using:
 
 The output is:
 
-\[
-\hat{D}
-\]
+
+$\hat{D}$
 
 But it is still distorted by the channel.
 
@@ -689,19 +686,18 @@ Receiver continuously listens to noisy samples.
 
 Question:
 
-###### How does it know where a frame begins?
+***How does it know where a frame begins?***
 
----
 
-###### Preamble-Based Synchronization
+##### Preamble-Based Synchronization
 
 Transmitter sends a known sequence:
 
-##### Preamble
+#### Preamble
 
 Receiver performs:
 
-##### Cross-Correlation
+#### Cross-Correlation
 
 It slides a stored copy across incoming samples.
 
@@ -712,9 +708,7 @@ When alignment occurs:
 
 This defines:
 
-$$
-t = 0
-$$
+$t = 0$
 
 ---
 
@@ -730,9 +724,7 @@ Transmitter inserts known QAM symbols into fixed grid locations.
 
 Example:
 
-$$
-5 + 5j
-$$
+$5 + 5j$
 
 at known coordinates.
 
@@ -756,9 +748,7 @@ Receiver then estimates:
 
 ##### Channel Matrix
 
-$$
-\hat{H}
-$$
+$\hat{H}$
 
 ---
 
@@ -784,9 +774,8 @@ and applies the inverse directly.
 
 If a channel coefficient is near zero:
 
-$$
-\frac{1}{\text{tiny number}}
-$$
+
+$\frac{1}{\text{tiny number}}$
 
 becomes huge.
 
@@ -825,9 +814,7 @@ After equalization:
 
 Example:
 
-$$
-16\text{-QAM}
-$$
+$16\text{-QAM}$
 
 maps each symbol back to 4 bits.
 
