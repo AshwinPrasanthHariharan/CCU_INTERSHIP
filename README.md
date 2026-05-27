@@ -8,28 +8,6 @@ This repository tracks my daily progress, code models, and RTL architecture impl
 
 ---
 
-### 🔹 Week 2: Environmental Distortions & Receiver-Side Understanding
-
-*Focus: Characterize environmental channel distortions and build receiver-side prototypes and simulations.*
-
----
-
-#### Goals
-
-- Survey propagation effects: multipath, delay spread, Doppler, fading (Rayleigh/Rician), and noise models.
-- Map receiver architecture: RF front-end, ADC, synchronization (CFO/TO), channel estimation, equalization, demodulation, decoding.
-- Implement simulation scripts for AWGN, multipath taps, Rayleigh/Rician fading, and Doppler shifts.
-- Prototype receiver algorithms: synchronization, LS/MMSE channel estimation, ZF/MMSE equalizers, symbol detection and demapping.
-- Run experiments (BER/SER vs SNR, SNR thresholds, effect of delay/Doppler) and collect results.
-- Deliver a short report and presentation summarizing findings and recommended RTL migration steps.
-
-#### Deliverables
-
-- `scripts/python/` simulation examples and small receiver notebooks.
-- CSV/JSON experiment results and plotted BER/SER curves.
-- Short written report and a 5–10 slide presentation.
-
-
 ### 🔹 Week 0-1: Literature Review & Mathematical Modeling
 
 *Focus: Mastering OTFS fundamentals and building the Python floating-point reference model.*
@@ -413,6 +391,467 @@ This section is useful for explaining the Whittaker-Shannon sampling theorem in 
 </div>
 
 
+###  Week 2: Environmental Distortions & Receiver-Side Understanding
+
+*Focus: Characterize environmental channel distortions and build receiver-side prototypes and simulations.*
 
 ---
- 
+
+#### Goals
+
+- Survey propagation effects: multipath, delay spread, Doppler, fading (Rayleigh/Rician), and noise models.
+- Map receiver architecture: RF front-end, ADC, synchronization (CFO/TO), channel estimation, equalization, demodulation, decoding.
+- Implement simulation scripts for AWGN, multipath taps, Rayleigh/Rician fading, and Doppler shifts.
+- Prototype receiver algorithms: synchronization, LS/MMSE channel estimation, ZF/MMSE equalizers, symbol detection and demapping.
+- Run experiments (BER/SER vs SNR, SNR thresholds, effect of delay/Doppler) and collect results.
+- Deliver a short report and presentation summarizing findings and recommended RTL migration steps.
+
+#### Deliverables
+
+- `scripts/python/` simulation examples and small receiver notebooks.
+- CSV/JSON experiment results and plotted BER/SER curves.
+- Short written report and a 5–10 slide presentation.
+---
+### Day 6 (May 25, 2026): The Physics of the Channel – Multipath, Delay, and Doppler
+
+#### Objectives
+
+- Understand the physical mechanisms that destroy transmitted signals in a terrestrial environment.
+- Define **Inter-Symbol Interference (ISI)** caused by Delay Spread.
+- Define **Inter-Carrier Interference (ICI)** caused by Doppler Shifts.
+- Establish the mathematical reality of the **Doubly Dispersive Channel**.
+
+---
+
+##### 1. Multipath Propagation & The Illusion of LoS
+
+In a perfect vacuum, communication is a straight line: a direct **Line of Sight (LoS)**.
+
+In a real environment (cities, terrain, indoors), the antenna radiates energy in all directions.
+
+When this energy hits:
+
+- Buildings
+- Cars
+- Ground
+- Walls
+- Metallic objects
+
+it reflects and scatters.
+
+The receiver therefore captures:
+
+- Direct LoS signal
+- Multiple reflected echoes
+
+This phenomenon is called:
+
+###### Multipath Propagation
+
+Each reflected copy arrives with:
+
+- Different delay
+- Different amplitude
+- Different phase
+
+---
+
+##### 2. Delay Spread and Inter-Symbol Interference (ISI)
+
+Reflected echoes travel longer distances than the direct signal.
+
+Since radio waves travel at the speed of light:
+
+:contentReference[oaicite:0]{index=0}
+
+Where:
+
+- \( \tau_i \) = delay of path \(i\)
+- \( d_i \) = distance traveled
+- \( c \) = speed of light
+
+---
+
+###### Delay Spread
+
+The difference between:
+
+- First arriving path
+- Last arriving echo
+
+is called:
+
+###### Delay Spread
+
+---
+
+###### Inter-Symbol Interference (ISI)
+
+If transmission is fast enough:
+
+- Echo of Symbol 1 overlaps with Symbol 2
+- Voltages combine physically
+- Receiver cannot separate symbols cleanly
+
+This creates:
+
+###### ISI (Inter-Symbol Interference)
+
+---
+
+###### Role of Cyclic Prefix (CP)
+
+The Cyclic Prefix acts as:
+
+- A guard interval
+- Artificial time buffer
+
+It allows delayed echoes to die out before the next symbol is processed.
+
+---
+
+##### 3. Mobility, Doppler Shift, and Inter-Carrier Interference (ICI)
+
+If:
+
+- Transmitter moves
+- Receiver moves
+- Reflectors move
+
+then channel geometry changes continuously.
+
+This creates:
+
+###### Doppler Shift
+
+---
+
+###### Doppler Effect
+
+Moving toward wavefronts:
+
+- Frequency increases
+
+Moving away:
+
+- Frequency decreases
+
+The Doppler shift is denoted by:
+
+\[
+\nu
+\]
+
+---
+
+###### Inter-Carrier Interference (ICI)
+
+OFDM and OTFS rely on:
+
+- Strict subcarrier orthogonality
+
+If Doppler is severe:
+
+- Frequency grid shifts
+- Orthogonality breaks
+- Subcarriers leak into neighbors
+
+This causes:
+
+###### ICI (Inter-Carrier Interference)
+
+---
+
+##### 4. The Doubly Dispersive Channel
+
+When both:
+
+- Delay spread exists
+- Doppler spread exists
+
+the channel becomes:
+
+##### Doubly Dispersive
+
+The received signal is modeled as:
+
+:contentReference[oaicite:1]{index=1}
+
+Where:
+
+- \( h_i \) = fading/amplitude scaling
+- \( \tau_i \) = delay spread component
+- \( \nu_i \) = Doppler shift
+- \( n(t) \) = thermal noise
+
+This equation mathematically models:
+
+- ISI
+- ICI
+- Fading
+- Noise
+
+simultaneously.
+
+---
+
+##### Key Intuition
+
+| Effect | Physical Cause | Result |
+|---|---|---|
+| Delay Spread | Multipath echoes | ISI |
+| Doppler Spread | Mobility | ICI |
+| Fading | Reflection/destructive interference | Signal attenuation |
+
+---
+
+### Day 7 (May 26, 2026): Theoretical Receiver Architecture – Undoing the Damage
+
+#### Objectives
+
+- Understand the OTFS receiver pipeline
+- Learn Frame Synchronization
+- Understand Pilot Symbols
+- Compare ZF and MMSE Equalizers
+
+---
+
+##### 1. Reverse Signal Pipeline
+
+The transmitter converted:
+
+- Delay-Doppler matrix
+→ Time-frequency signal
+→ Time-domain waveform
+
+The receiver performs the reverse operation.
+
+---
+
+###### Receiver Stages
+
+1. Step 1 — ADC & CP Removal
+
+The antenna receives:
+
+\[
+y(t)
+\]
+
+The receiver:
+
+- Digitizes the analog waveform
+- Removes the Cyclic Prefix
+
+This removes the most corrupted ISI region.
+
+---
+
+2. Step 2 — Wigner Transform (FFT)
+
+Receiver performs:
+
+- M-point FFT
+
+This reconstructs the:
+
+##### Time-Frequency Grid
+
+$$
+X_{TF}
+$$
+
+---
+
+3. Step 3 — Symplectic FFT (SFFT)
+
+Receiver transforms data back into:
+
+##### Delay-Doppler Domain
+
+using:
+
+:contentReference[oaicite:2]{index=2}
+
+The output is:
+
+\[
+\hat{D}
+\]
+
+But it is still distorted by the channel.
+
+---
+
+##### 2. Frame Synchronization
+
+Receiver continuously listens to noisy samples.
+
+Question:
+
+###### How does it know where a frame begins?
+
+---
+
+###### Preamble-Based Synchronization
+
+Transmitter sends a known sequence:
+
+##### Preamble
+
+Receiver performs:
+
+##### Cross-Correlation
+
+It slides a stored copy across incoming samples.
+
+When alignment occurs:
+
+- Correlation spikes sharply
+- Spike index becomes frame start
+
+This defines:
+
+$$
+t = 0
+$$
+
+---
+
+##### 3. Channel Estimation
+
+Receiver cannot reverse distortion unless it knows the channel.
+
+---
+
+###### Pilot Symbols
+
+Transmitter inserts known QAM symbols into fixed grid locations.
+
+Example:
+
+$$
+5 + 5j
+$$
+
+at known coordinates.
+
+---
+
+###### Estimation Logic
+
+Receiver compares:
+
+| Expected Pilot | Received Pilot |
+|---|---|
+| \(5+5j\) | \(2.5+1j\) |
+
+Difference reveals:
+
+- Amplitude attenuation
+- Phase rotation
+- Delay/Doppler effects
+
+Receiver then estimates:
+
+##### Channel Matrix
+
+$$
+\hat{H}
+$$
+
+---
+
+##### 4. Equalization
+
+Goal:
+
+Recover original transmitted symbols.
+
+---
+
+##### Zero Forcing (ZF)
+
+ZF computes:
+
+:contentReference[oaicite:3]{index=3}
+
+and applies the inverse directly.
+
+---
+
+###### Problem with ZF
+
+If a channel coefficient is near zero:
+
+$$
+\frac{1}{\text{tiny number}}
+$$
+
+becomes huge.
+
+This amplifies thermal noise severely.
+
+ZF works poorly in deep fades.
+
+---
+
+##### MMSE Equalizer
+
+MMSE improves equalization by considering:
+
+- Channel distortion
+- Signal-to-noise ratio (SNR)
+
+It balances:
+
+- Undoing distortion
+- Avoiding noise amplification
+
+Result:
+
+- More stable recovery
+- Better practical performance
+
+---
+
+##### Final Detection
+
+After equalization:
+
+- Complex constellation points are cleaned
+- Receiver maps them to nearest QAM coordinates
+- Bits are recovered
+
+Example:
+
+$$
+16\text{-QAM}
+$$
+
+maps each symbol back to 4 bits.
+
+---
+
+##### Core Big Picture
+
+| Block | Purpose |
+|---|---|
+| CP Removal | Reduce ISI |
+| FFT | Recover frequency-domain grid |
+| SFFT | Recover delay-doppler symbols |
+| Synchronization | Detect frame start |
+| Pilot Estimation | Learn channel |
+| Equalizer | Undo channel distortion |
+| QAM Detection | Recover bits |
+
+---
+
+###### OTFS Receiver Philosophy
+
+The receiver is essentially solving:
+
+> “Given a distorted electromagnetic mess,
+> what was originally transmitted?”
+
+OTFS succeeds because the Delay-Doppler representation remains more stable under mobility and multipath than conventional OFDM.
