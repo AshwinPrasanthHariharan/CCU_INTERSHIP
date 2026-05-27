@@ -8,6 +8,27 @@ This repository tracks my daily progress, code models, and RTL architecture impl
 
 ---
 
+### 🔹 Week 2: Environmental Distortions & Receiver-Side Understanding
+
+*Focus: Characterize environmental channel distortions and build receiver-side prototypes and simulations.*
+
+---
+
+#### Goals
+
+- Survey propagation effects: multipath, delay spread, Doppler, fading (Rayleigh/Rician), and noise models.
+- Map receiver architecture: RF front-end, ADC, synchronization (CFO/TO), channel estimation, equalization, demodulation, decoding.
+- Implement simulation scripts for AWGN, multipath taps, Rayleigh/Rician fading, and Doppler shifts.
+- Prototype receiver algorithms: synchronization, LS/MMSE channel estimation, ZF/MMSE equalizers, symbol detection and demapping.
+- Run experiments (BER/SER vs SNR, SNR thresholds, effect of delay/Doppler) and collect results.
+- Deliver a short report and presentation summarizing findings and recommended RTL migration steps.
+
+#### Deliverables
+
+- `scripts/python/` simulation examples and small receiver notebooks.
+- CSV/JSON experiment results and plotted BER/SER curves.
+- Short written report and a 5–10 slide presentation.
+
 
 ### 🔹 Week 0-1: Literature Review & Mathematical Modeling
 
@@ -387,7 +408,7 @@ The final visualization cell in [scripts/python/Tx understanding.ipynb](scripts/
 This section is useful for explaining the Whittaker-Shannon sampling theorem in the context of the OTFS transmitter chain: the FPGA emits discrete values, and the sinc-based plot illustrates how those samples relate to the ideal continuous-time analog waveform that a DAC and pulse-shaping filter would produce.
 <div align="center">
   <img src="./assets/fig5.png" alt="sampled tx_signal" width="1000" style="max-width:90%;height:auto;" />
-  <br/>
+  <br>
   <b>Figure 5: Visualization of the Tx_Signal(After interpollation)</b><br>
 </div>
 
