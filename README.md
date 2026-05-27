@@ -668,7 +668,7 @@ Receiver transforms data back into:
 
 using:
 
-:contentReference[oaicite:2]{index=2}
+**SFFT**
 
 The output is:
 
