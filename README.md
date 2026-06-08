@@ -321,76 +321,6 @@ X_TF = np.dot(np.dot(W_M, D), W_N_inv)
 - The scale factors `1 / sqrt(M)` and `1 / sqrt(N)` keep the transform unitary, which preserves energy and avoids artificial gain during verification.
 - `X_TF = np.dot(np.dot(W_M, D), W_N_inv)` is the ISFFT sandwich itself. It converts the Delay-Doppler frame `D` into the Time-Frequency grid `X_TF` that the Heisenberg transmit stage consumes next.
 
-##### **Stage 4-6: Heisenberg Synthesis (The Hardware RTL Way)**
-
-```python
-# =====================================================================
-# STAGE 4: HEISENBERG SYNTHESIS (THE HARDWARE RTL WAY)
-# =====================================================================
-# The discrete Heisenberg Transform applies an M-point IFFT along the 
-# subcarriers (rows) of each independent time slot (columns).
-
-# Apply unitary IFFT down the columns (axis=0). 
-# np.fft.ifft divides by M, so we multiply by sqrt(M) to maintain unitary power scaling.
-time_domain_slots = np.fft.ifft(X_TF, axis=0) * np.sqrt(M)
-
-# =====================================================================
-# STAGE 5: DISCRETE CYCLIC PREFIX GUARD INJECTION
-# =====================================================================
-# Instead of looping, we slice the tails off all 4 time slots simultaneously.
-# N_CP = 2 (We copy the exact 2 discrete digital samples from the bottom of the matrix)
-
-cp_tails = time_domain_slots[-N_CP:, :]
-
-# Stack the copied tails directly on top of the original time slots
-guarded_slots = np.vstack((cp_tails, time_domain_slots))
-
-# =====================================================================
-# STAGE 6: FPGA SERIALIZATION (PARALLEL TO SERIAL)
-# =====================================================================
-# The FPGA calculates a whole slot in parallel, but must push it out to the DAC
-# one sample at a time, slot by slot chronologically.
-# 'F' (Fortran-order) flattens the matrix column-by-column, exactly mimicking 
-# the hardware shift registers pushing data to the DAC bus!
-
-final_tx_signal = guarded_slots.flatten('F')
-# --- Check the true digital sizing ---
-print(f"Guarded Slot Matrix Size : {guarded_slots.shape} (6 samples x 4 slots)")
-print(f"Final FPGA Digital Output: {final_tx_signal.shape} total samples heading to DAC.")
-```
-
-- `time_domain_slots = np.fft.ifft(X_TF, axis=0) * np.sqrt(M)` performs the Heisenberg synthesis by converting each Time-Frequency column into an $M$-sample time-domain slot while keeping the transform power-normalized.
-- `cp_tails = time_domain_slots[-N_CP:, :]` extracts the last `N_CP` samples from every slot so they can be reused as the cyclic prefix.
-- `guarded_slots = np.vstack((cp_tails, time_domain_slots))` prepends the copied prefix samples to each slot, protecting the useful payload against delay spread and inter-symbol interference.
-- `final_tx_signal = guarded_slots.flatten('F')` serializes the 2D slot matrix column-by-column into a single DAC-ready 1D stream, matching the FPGA output order.
-- The `print()` checks confirm the guarded matrix shape and final sample count before moving on to waveform validation.
-
-<div align="center">
-  <img src="./assets/fig4.1.png" alt="sampled tx_signal" width="1000" style="max-width:90%;height:auto;" />
-  <br/>
-  <b>Figure 4: Visualization of the Tx_Signal(digitized)</b><br>
-</div>
-
-
-##### **Stage 7: Whittaker-Shannon Interpolation View of the Serialized Output**
-
-The final visualization cell in [scripts/python/Tx understanding.ipynb](scripts/python/Tx%20understanding.ipynb) turns the serialized DAC stream into a sinc-based reconstruction plot.
-
-- `discrete_samples = final_tx_signal.real` extracts the real-valued baseband samples that will be used for the interpolation demo.
-- `sample_indices = np.arange(len(discrete_samples))` assigns each discrete sample a fixed timeline position.
-- `t_analog = np.linspace(-2, len(discrete_samples) + 1, 1000)` creates a dense continuous-time axis so the sinc tails and overlap regions can be seen clearly.
-- Inside the loop, `np.sinc(t_analog - n)` generates one shifted sinc pulse per sample and scales it by that sample's amplitude.
-- `summed_analog_wave += individual_sinc` accumulates all shifted pulses into the final reconstructed waveform, showing how ideal bandlimited interpolation rebuilds the continuous signal from discrete values.
-- The stem plot overlays the original sample positions on top of the sinc sum so the notebook can visually confirm that the reconstructed curve passes through every discrete point.
-
-This section is useful for explaining the Whittaker-Shannon sampling theorem in the context of the OTFS transmitter chain: the FPGA emits discrete values, and the sinc-based plot illustrates how those samples relate to the ideal continuous-time analog waveform that a DAC and pulse-shaping filter would produce.
-<div align="center">
-  <img src="./assets/fig5.png" alt="sampled tx_signal" width="1000" style="max-width:90%;height:auto;" />
-  <br>
-  <b>Figure 5: Visualization of the Tx_Signal(After interpollation)</b><br>
-</div>
-
-
 ###  Week 2: Environmental Distortions & Receiver-Side Understanding
 
 *Focus: Characterize environmental channel distortions and build receiver-side prototypes and simulations.*
@@ -841,3 +771,344 @@ The receiver is essentially solving:
 > what was originally transmitted?”
 
 OTFS succeeds because the Delay-Doppler representation remains more stable under mobility and multipath than conventional OFDM.
+
+### **Day 8 (May 27, 2026): Complex Baseband Signals & I/Q Decomposition**
+
+#### **Objectives**
+
+1. Understand why modern communication systems use complex-valued signal representations.
+2. Relate QAM constellation symbols to In-Phase (I) and Quadrature (Q) components.
+3. Understand the mathematical meaning of complex baseband signals.
+4. Visualize how information is encoded using amplitude and phase.
+
+---
+
+##### 1. From QAM Symbols to Complex Samples
+
+After the OTFS transmitter completes the ISFFT and Heisenberg transform operations, the output exists as a stream of complex-valued samples:
+
+$$
+x[n] = I[n] + jQ[n]
+$$
+
+where:
+
+- \(I[n]\) represents the In-Phase component.
+- \(Q[n]\) represents the Quadrature component.
+
+Each complex sample corresponds to a unique point in the QAM constellation and contains both amplitude and phase information.
+
+Unlike an RF waveform, these samples exist entirely inside the digital processing chain and are therefore referred to as **complex baseband samples**.
+
+---
+
+##### 2. Orthogonal Basis Functions
+
+Modern communication systems use two orthogonal carrier components:
+
+$$
+\cos(2\pi f_c t)
+$$
+
+and
+
+$$
+\sin(2\pi f_c t)
+$$
+
+These functions are orthogonal over a symbol interval:
+
+$$
+\int_0^T
+\cos(2\pi f_c t)
+\sin(2\pi f_c t)\,dt = 0
+$$
+
+Because of this orthogonality, two independent information streams can occupy the same frequency band without interfering with each other.
+
+---
+
+##### 3. Geometric Interpretation of a Complex Symbol
+
+A QAM symbol may be represented as:
+
+$$
+s = I + jQ
+$$
+
+where:
+
+- \(I\) determines the horizontal coordinate.
+- \(Q\) determines the vertical coordinate.
+
+The symbol magnitude is:
+
+$$
+|s| = \sqrt{I^2 + Q^2}
+$$
+
+and the phase is:
+
+$$
+\theta = \tan^{-1}\left(\frac{Q}{I}\right)
+$$
+
+Thus, every constellation point uniquely specifies a signal amplitude and phase.
+
+---
+
+##### Key Understanding
+
+A QAM symbol is not a physical waveform.
+
+It is a complex coordinate that stores amplitude and phase information digitally before RF modulation is performed.
+
+---
+
+### **Day 9 (May 28, 2026): RF Upconversion Using I/Q Modulation**
+
+#### **Objectives**
+
+1. Understand the transition from complex baseband signals to RF signals.
+2. Study the mathematical model of quadrature modulation.
+3. Generate a physically transmittable RF waveform from I/Q samples.
+4. Visualize the role of carrier frequency translation.
+
+---
+
+##### 1. Why Upconversion Is Necessary
+
+The OTFS transmitter generates information-bearing signals around DC (0 Hz).
+
+These low-frequency signals cannot be efficiently radiated by practical antennas.
+
+Therefore, the signal must be translated to a higher carrier frequency \(f_c\) before transmission.
+
+---
+
+##### 2. I/Q Modulator Architecture
+
+The RF waveform is generated using the In-Phase and Quadrature components:
+
+$$
+s_{RF}(t)
+=
+I(t)\cos(2\pi f_c t)
+-
+Q(t)\sin(2\pi f_c t)
+$$
+
+where:
+
+- \(I(t)\) modulates the cosine carrier.
+- \(Q(t)\) modulates the sine carrier.
+
+The resulting waveform is real-valued and can be transmitted through an antenna.
+
+---
+
+##### 3. Simulation Activities
+
+The following steps were performed:
+
+- Extracted the real component as the I stream.
+- Extracted the imaginary component as the Q stream.
+- Generated sinusoidal carrier waveforms.
+- Mixed the I branch with the cosine carrier.
+- Mixed the Q branch with the sine carrier.
+- Combined both branches to generate the final RF signal.
+
+---
+##### Simulation Results
+
+The following simulation was performed to reconstruct a continuous-time complex baseband waveform from the discrete Heisenberg transform output and subsequently generate a real RF waveform suitable for transmission.
+
+```python
+import numpy as np
+
+# =====================================================================
+# COMPLEX BASEBAND INTERPOLATION AND RF UPCONVERSION
+# =====================================================================
+
+# Serialize the 2-D Heisenberg output into a single streaming frame
+final_tx_signal = time_domain_slots.flatten(order='F')
+
+# Preserve complex-valued I/Q samples
+tx_complex_samples = np.asarray(final_tx_signal, dtype=complex)
+
+# Continuous interpolation axis
+t_analog = np.linspace(0, len(tx_complex_samples) - 1, 1000)
+
+# Convert sample indices into physical time
+Ts = 1.0 / (M * Delta_f)
+t_seconds = t_analog * Ts
+
+# Sinc interpolation of I and Q components
+i_analog_wave = np.zeros_like(t_analog, dtype=float)
+q_analog_wave = np.zeros_like(t_analog, dtype=float)
+
+for n, symbol in enumerate(tx_complex_samples):
+
+    sinc_basis = np.sinc(t_analog - n)
+
+    i_analog_wave += symbol.real * sinc_basis
+    q_analog_wave += symbol.imag * sinc_basis
+
+# Reconstructed complex baseband signal
+complex_baseband_wave = (
+    i_analog_wave +
+    1j * q_analog_wave
+)
+
+# RF upconversion
+fc = 10000.0
+
+rf_tx_signal = np.real(
+    complex_baseband_wave *
+    np.exp(1j * 2 * np.pi * fc * t_seconds)
+)
+```
+
+**Observations**
+
+- The discrete complex samples produced by the Heisenberg transform were successfully reconstructed into continuous-time I(t) and Q(t) waveforms using sinc interpolation.
+- The reconstructed baseband signal preserved both amplitude and phase information contained within the original OTFS symbols.
+- Quadrature modulation shifted the signal from baseband to the desired carrier frequency of 10 kHz.
+- The resulting waveform became a purely real-valued RF signal suitable for DAC generation and antenna transmission.
+- The simulation verified the complete signal flow from complex baseband representation to physical RF waveform synthesis.
+
+---
+
+<div align="center">
+<img src="./assets/fig4.png" width="850"/>
+
+**Figure 8.1:** Complex baseband waveform showing the reconstructed In-Phase \(I(t)\) and Quadrature \(Q(t)\) components after sinc interpolation.
+</div>
+
+<div align="center">
+<img src="./assets/fig5.png" width="850"/>
+
+**Figure 9.1:** Real RF waveform generated through quadrature modulation of the complex baseband signal.
+</div>
+
+##### 4. Physical Interpretation
+
+The I and Q branches independently control the amplitude and phase of the transmitted carrier.
+
+Together they allow a single RF signal to carry complex information without requiring multiple frequency channels.
+
+---
+
+##### Key Understanding
+
+Although OTFS processing relies heavily on complex arithmetic, the antenna ultimately transmits a single real-valued RF waveform generated through quadrature modulation.
+
+---
+
+### **Day 10 (May 29, 2026): Sinc Interpolation & Continuous-Time Waveform Reconstruction**
+
+#### **Objectives**
+
+1. Understand the difference between discrete-time samples and continuous-time signals.
+2. Study pulse-shaping and interpolation techniques.
+3. Investigate the orthogonality properties of sinc functions.
+4. Reconstruct a continuous-time approximation of the transmitted waveform.
+
+---
+
+##### 1. Discrete Samples Versus Physical Signals
+
+The Heisenberg transform produces a sequence of discrete-time samples:
+
+$$
+x[0], x[1], x[2], \dots, x[N-1]
+$$
+
+However, a real communication channel requires a continuously varying voltage waveform.
+
+Therefore, the discrete samples must be reconstructed into a continuous signal before transmission.
+
+---
+
+##### 2. Ideal Sinc Interpolation
+
+The ideal interpolation kernel is the sinc function:
+
+$$
+\operatorname{sinc}(x)
+=
+\frac{\sin(\pi x)}{\pi x}
+$$
+
+Each transmitted sample generates a shifted sinc pulse.
+
+The continuous waveform is obtained by summing all shifted sinc functions:
+
+$$
+x(t)
+=
+\sum_{n=-\infty}^{\infty}
+x[n]
+\operatorname{sinc}
+\left(
+\frac{t-nT_s}{T_s}
+\right)
+$$
+
+where \(T_s\) is the sampling interval.
+
+---
+
+##### 3. Orthogonality Property
+
+A key property of the sinc function is:
+
+$$
+\operatorname{sinc}(n)=0
+\qquad
+n \neq 0
+$$
+
+This means that every pulse reaches zero exactly at the sampling locations of neighboring symbols.
+
+Consequently, symbols can overlap in time without creating Inter-Symbol Interference (ISI).
+
+---
+
+##### 4. Simulation Activities
+
+The following investigations were performed:
+
+- Applied sinc interpolation to generated OTFS baseband samples.
+- Visualized discrete sample locations.
+- Reconstructed a continuous-time waveform.
+- Examined pulse overlap behavior.
+- Verified zero-crossing properties of neighboring sinc pulses.
+
+---
+##### Simulation Results
+
+The sinc interpolation process was visualized to verify reconstruction of the continuous-time waveform from discrete OTFS samples.
+
+<div align="center">
+<img src="./assets/fig6.png" width="900"/>
+
+**Figure 10.1:** Sinc interpolation applied independently to the In-Phase and Quadrature sample streams. The markers indicate original discrete samples while the continuous curves represent the reconstructed waveform.
+</div>
+
+**Observations**
+
+- Every transmitted sample generated a shifted sinc basis function.
+- The superposition of all sinc functions reconstructed a smooth continuous-time waveform.
+- Neighboring sinc pulses crossed zero at sampling locations, preserving symbol orthogonality.
+- The reconstructed waveform matched the original sample values exactly at sampling instants.
+- The simulation demonstrated the theoretical foundation of pulse shaping and waveform reconstruction used in digital communication systems.
+
+---
+
+##### 5. Relationship to the Heisenberg Transform
+
+The Heisenberg transform produces discrete-time waveform samples.
+
+Sinc interpolation provides a mathematical approximation of how those samples evolve into a smooth continuous-time signal suitable for RF transmission.
+
