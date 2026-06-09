@@ -1285,6 +1285,18 @@ tx_with_cp = np.concatenate(slots_with_cp)
 **Figure 11.1:** Cyclic Prefix insertion process showing the final samples of a symbol copied to the beginning of the transmission block.
 </div>
 
+<div align="center">
+<img src="./assets/fig9.png" width="950"/>
+
+**Figure 11.2:** Discrete In-Phase and Quadrature sample streams illustrating Cyclic Prefix insertion. The colored payload samples correspond to the original OTFS symbol data, while the highlighted prefix samples represent copies of the final symbol samples inserted at the beginning of each transmission block.
+</div>
+
+<div align="center">
+<img src="./assets/fig8.png" width="900"/>
+
+**Figure 11.3:** RF waveform after Cyclic Prefix insertion. The transmitted waveform now contains guard intervals that extend the duration of each transmitted OTFS symbol while maintaining the original information-bearing waveform structure.
+</div>
+
 ---
 
 ##### Key Understanding
