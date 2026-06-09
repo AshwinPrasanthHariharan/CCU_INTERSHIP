@@ -342,7 +342,7 @@ X_TF = np.dot(np.dot(W_M, D), W_N_inv)
 - CSV/JSON experiment results and plotted BER/SER curves.
 - Short written report and a 5–10 slide presentation.
 ---
-### Day 6 (May 25, 2026): The Physics of the Channel – Multipath, Delay, and Doppler
+### **Day 6 (May 25, 2026): The Physics of the Channel – Multipath, Delay, and Doppler**
 
 #### Objectives
 
@@ -534,7 +534,7 @@ simultaneously.
 
 ---
 
-### Day 7 (May 26, 2026): Theoretical Receiver Architecture – Undoing the Damage
+### **Day 7 (May 26, 2026): Theoretical Receiver Architecture – Undoing the Damage**
 
 #### Objectives
 
@@ -563,9 +563,7 @@ The receiver performs the reverse operation.
 
 The antenna receives:
 
-\[
-y(t)
-\]
+$y(t)$
 
 The receiver:
 
