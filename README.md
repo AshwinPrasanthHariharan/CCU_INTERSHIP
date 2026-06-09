@@ -1300,3 +1300,641 @@ tx_with_cp = np.concatenate(slots_with_cp)
 ##### Key Understanding
 
 The Cyclic Prefix does not increase data throughput or improve signal quality directly. Its primary purpose is to protect the useful symbol interval from delayed multipath echoes and enable efficient FFT-based processing at the receiver. This mechanism forms the foundation for studying multipath propagation, delay spread, and Inter-Symbol Interference in subsequent channel simulations.
+
+### **Day 12 (May 31, 2026): Delay–Doppler Channel Modeling & Individual Path Generation**
+
+#### Objectives
+
+1. Implement a realistic wireless propagation channel.
+2. Simulate multipath delay spread.
+3. Introduce Doppler shifts caused by mobility.
+4. Generate individual channel paths for later RF combination.
+5. Visualize the impact of delay and Doppler on complex baseband signals.
+
+---
+
+##### 1. Motivation
+
+Until this stage, the transmitter produced an ideal RF waveform.
+
+Real wireless channels introduce distortions due to:
+
+- Reflections
+- Scattering
+- Mobility
+- Relative motion
+
+As a result, the receiver observes multiple delayed and frequency-shifted copies of the transmitted signal.
+
+---
+
+##### 2. Multipath Channel Model
+
+The received signal consists of multiple propagation paths.
+
+Each path is characterized by:
+
+- Delay
+- Doppler shift
+- Path gain
+
+For path \(i\):
+
+$$
+r_i(t)
+=
+s(t-\tau_i)
+e^{j2\pi f_{D,i} t}
+$$
+
+where
+
+- \(s(t)\) = transmitted signal
+- \(\tau_i\) = propagation delay
+- \(f_{D,i}\) = Doppler shift
+
+---
+
+##### 3. Channel Parameters
+
+The following channel profile was implemented.
+
+| Path | Delay (μs) | Doppler Shift (Hz) |
+|--------|--------|--------|
+| Path 1 | 0 | 0 |
+| Path 2 | 250 | +350 |
+| Path 3 | 625 | -200 |
+
+These values emulate a receiver observing:
+
+- Direct line-of-sight energy
+- One positive-Doppler reflection
+- One negative-Doppler reflection
+
+---
+
+##### 4. Delay Implementation
+
+Each path was delayed independently.
+
+The delay operation was implemented by shifting the waveform in time according to:
+
+$$
+\tau_i
+=
+\frac{d_i}{c}
+$$
+
+where:
+
+- \(d_i\) is path length
+- \(c\) is speed of light
+
+The delayed copies begin later in the observation window and represent reflected signal arrivals.
+
+---
+
+##### 5. Doppler Implementation
+
+After delaying the signal, Doppler shifts were applied through complex phase rotation.
+
+$$
+e^{j2\pi f_{D,i}t}
+$$
+
+Positive Doppler corresponds to approaching motion.
+
+Negative Doppler corresponds to receding motion.
+
+
+---
+##### 6. Channel Model Implementation
+
+To simulate a realistic wireless propagation environment, two reusable functions were developed.
+
+The first function generates delayed replicas of the transmitted waveform on a common time axis. The second function applies Doppler-induced frequency shifts to each delayed path.
+
+---
+
+###### Fractional Delay Generation
+
+The following function creates delayed versions of the transmitted complex waveform.
+
+```python
+def add_fractional_delays(signal, t_seconds, delays_us):
+    """Generate delayed replicas of a complex waveform on a common extended time grid.
+
+    Parameters
+    ----------
+    signal : np.ndarray
+        Complex-valued waveform samples.
+    t_seconds : np.ndarray
+        Original time axis for the waveform.
+    delays_us : list[float]
+        Path delays in microseconds.
+
+    Returns
+    -------
+    delayed_paths : list[np.ndarray]
+        One delayed waveform per propagation path.
+    t_extended : np.ndarray
+        Common time axis extended to fit the longest delay.
+    """
+
+    signal = np.asarray(signal)
+    t_seconds = np.asarray(t_seconds, dtype=float)
+    delays_us = list(delays_us)
+
+    if signal.ndim != 1:
+        raise ValueError("signal must be a 1D waveform")
+
+    if t_seconds.ndim != 1:
+        raise ValueError("t_seconds must be a 1D time axis")
+
+    if len(signal) != len(t_seconds):
+        raise ValueError(
+            "signal and t_seconds must have the same length"
+        )
+
+    if len(t_seconds) < 2:
+        raise ValueError(
+            "t_seconds must contain at least two samples"
+        )
+
+    tau_seconds = [
+        delay_us * 1e-6
+        for delay_us in delays_us
+    ]
+
+    max_delay = max(tau_seconds, default=0.0)
+
+    dt = t_seconds[1] - t_seconds[0]
+
+    t_extended = np.arange(
+        0.0,
+        t_seconds[-1] + max_delay + 0.5 * dt,
+        dt
+    )
+
+    interp_real = lambda query_times: np.interp(
+        query_times,
+        t_seconds,
+        np.real(signal),
+        left=0.0,
+        right=0.0
+    )
+
+    interp_imag = lambda query_times: np.interp(
+        query_times,
+        t_seconds,
+        np.imag(signal),
+        left=0.0,
+        right=0.0
+    )
+
+    delayed_paths = []
+
+    for tau in tau_seconds:
+
+        shifted_times = t_extended - tau
+
+        delayed_wave = (
+            interp_real(shifted_times)
+            +
+            1j * interp_imag(shifted_times)
+        )
+
+        delayed_paths.append(delayed_wave)
+
+    return delayed_paths, t_extended
+```
+
+---
+
+###### Doppler Shift Application
+
+After generating delayed replicas, Doppler shifts were applied independently to each path.
+
+```python
+def apply_doppler(
+    delayed_paths,
+    t_extended,
+    dopplers_hz
+):
+    """Apply Doppler shifts to delayed complex paths."""
+
+    delayed_paths = [
+        np.asarray(path)
+        for path in delayed_paths
+    ]
+
+    t_extended = np.asarray(
+        t_extended,
+        dtype=float
+    )
+
+    dopplers_hz = list(dopplers_hz)
+
+    if len(delayed_paths) != len(dopplers_hz):
+        raise ValueError(
+            "delayed_paths and dopplers_hz "
+            "must have the same length"
+        )
+
+    if t_extended.ndim != 1:
+        raise ValueError(
+            "t_extended must be a 1D time axis"
+        )
+
+    doppler_paths = []
+
+    for path, fd in zip(
+        delayed_paths,
+        dopplers_hz
+    ):
+
+        doppler_path = (
+            path *
+            np.exp(
+                1j *
+                2 *
+                np.pi *
+                fd *
+                t_extended
+            )
+        )
+
+        doppler_paths.append(
+            doppler_path
+        )
+
+    return doppler_paths
+```
+
+---
+
+###### Channel Parameter Configuration
+
+The simulation used the following propagation parameters.
+
+```python
+path_delays_us = [
+    0,
+    250,
+    625
+]
+
+path_dopplers_hz = [
+    0,
+    350,
+    -200
+]
+```
+
+---
+
+###### Channel Path Generation
+
+```python
+delayed_paths, t_extended = add_fractional_delays(
+    complex_baseband_wave,
+    t_seconds,
+    path_delays_us
+)
+
+doppler_paths = apply_doppler(
+    delayed_paths,
+    t_extended,
+    path_dopplers_hz
+)
+```
+
+These generated paths represent the individual delay-Doppler components of the wireless channel and form the basis for the RF multipath synthesis performed in the following day.
+---
+##### Simulation Results
+
+The generated channel paths are shown below.
+
+<div align="center">
+
+<img src="./assets/fig10.png" width="950"/>
+
+**Figure 12.1:** Complex baseband representations of the three channel paths. Delays create shifted arrivals while Doppler shifts alter phase evolution.
+
+</div>
+
+---
+
+##### Observations
+
+- Path 1 arrives immediately.
+- Path 2 begins after 250 μs.
+- Path 3 begins after 625 μs.
+- Positive Doppler causes accelerated phase rotation.
+- Negative Doppler produces reverse phase evolution.
+- The channel now contains both delay spread and Doppler spread.
+
+---
+
+##### Key Understanding
+
+A wireless channel does not simply attenuate signals.
+
+Instead, it generates multiple delayed and Doppler-shifted replicas that occupy different regions of the delay-Doppler plane.
+
+This forms the foundation of OTFS channel modeling.
+
+### **Day 13–14 (June 1–2, 2026): RF Multipath Synthesis, Receiver Downconversion & Complex Baseband Recovery**
+
+#### **Objectives**
+
+1. Combine all delayed and Doppler-shifted propagation paths into a single received RF waveform.
+2. Visualize the RF-domain representation of individual propagation paths.
+3. Study constructive and destructive interference caused by multipath propagation.
+4. Implement receiver-side quadrature downconversion.
+5. Recover the complex baseband signal from the received RF waveform.
+6. Apply low-pass filtering to remove mixer image frequencies.
+7. Downsample the recovered waveform for symbol-rate processing.
+8. Prepare the signal for constellation regeneration and symbol recovery.
+
+---
+
+##### 1. RF Path Generation
+
+The delayed and Doppler-shifted channel paths generated in the previous stage were converted into RF-domain waveforms.
+
+Each path contains:
+
+- Propagation delay
+- Doppler shift
+- Phase distortion
+- Amplitude scaling
+
+The RF representation of path \(i\) can be expressed as
+
+$$
+r_i(t)
+=
+g_i
+s(t-\tau_i)
+e^{j2\pi f_{D,i}t}
+$$
+
+where:
+
+- \(g_i\) is the path gain
+- \(\tau_i\) is the propagation delay
+- \(f_{D,i}\) is the Doppler shift
+
+---
+
+##### RF Path Visualization
+
+Before combining the individual propagation paths, each RF path was visualized independently.
+
+The simulated channel parameters were:
+
+| Path | Delay (μs) | Doppler Shift (Hz) |
+|--------|--------|--------|
+| Path 1 | 0 | 0 |
+| Path 2 | 250 | +350 |
+| Path 3 | 625 | -200 |
+
+---
+
+##### Simulation Results
+
+<div align="center">
+
+<img src="./assets/fig11.png" width="950"/>
+
+**Figure 13.1:** RF-domain representation of the three propagation paths after delay and Doppler application.
+
+</div>
+
+---
+
+##### Observations
+
+- Path 1 represents the direct line-of-sight component.
+- Path 2 arrives 250 μs later and experiences a positive Doppler shift.
+- Path 3 arrives 625 μs later and experiences a negative Doppler shift.
+- Each path exhibits unique phase evolution due to Doppler modulation.
+- These paths collectively form the wireless channel seen by the receiver.
+
+---
+
+##### 2. Multipath Signal Superposition
+
+The receiver does not observe the individual paths separately.
+
+Instead, all propagation paths arrive simultaneously and add together according to the principle of superposition.
+
+The received signal is therefore
+
+$$
+r(t)
+=
+\sum_{i=1}^{P}
+g_i
+s(t-\tau_i)
+e^{j2\pi f_{D,i}t}
+$$
+
+where:
+
+- \(P\) is the number of propagation paths
+- \(g_i\) is the path gain
+- \(\tau_i\) is the delay
+- \(f_{D,i}\) is the Doppler frequency
+
+---
+
+##### Path Gain Assignment
+
+To emulate realistic attenuation, gain coefficients were assigned to each path.
+
+```python
+rf_path_gains = np.linspace(
+    1.0,
+    0.5,
+    len(rf_doppler_paths)
+)
+```
+
+The direct path was assigned the highest gain while reflected paths experienced increasing attenuation.
+
+---
+
+##### Multipath Combination Function
+
+```python
+def combine_multipath_paths(paths, gains):
+
+    rx_signal = np.zeros_like(
+        paths[0],
+        dtype=complex
+    )
+
+    for path, gain in zip(paths, gains):
+        rx_signal += gain * path
+
+    return rx_signal
+```
+
+---
+
+##### Simulation Execution
+
+```python
+rf_rx_signal = combine_multipath_paths(
+    rf_doppler_paths,
+    rf_path_gains
+)
+
+rf_rx_signal = rf_rx_signal.real
+```
+
+---
+
+##### Simulation Results
+
+<div align="center">
+
+<img src="./assets/fig12.png" width="950"/>
+
+**Figure 13.2:** Combined RF received signal obtained after summing all delayed and Doppler-shifted propagation paths.
+
+</div>
+
+---
+
+##### Observations
+
+- Constructive interference generated large amplitude peaks.
+- Destructive interference generated deep fading regions.
+- Time-varying fading became clearly visible.
+- The received waveform differs significantly from the transmitted RF waveform.
+- Delay spread and Doppler spread jointly distort the signal.
+
+---
+
+##### 3. Receiver Quadrature Downconversion
+
+The received RF waveform occupies a band centered around the carrier frequency \(f_c\).
+
+To recover the transmitted information, the receiver performs quadrature downconversion.
+
+The received signal is multiplied by a locally generated carrier:
+
+$$
+r_{BB}(t)
+=
+r_{RF}(t)
+e^{-j2\pi f_c t}
+$$
+
+This shifts the desired spectrum from the carrier frequency back to DC.
+
+---
+
+##### Downconversion Implementation
+
+```python
+rx_complex_mixed = (
+    rf_rx_signal *
+    np.exp(
+        -1j *
+        2 *
+        np.pi *
+        fc *
+        t_extended
+    )
+)
+```
+
+---
+
+##### 4. Low-Pass Filtering
+
+The mixing operation generates two spectral components:
+
+$$
+f_c-f_c = 0
+$$
+
+and
+
+$$
+f_c+f_c = 2f_c
+$$
+
+The component near \(2f_c\) contains no useful information and must be removed.
+
+A low-pass filter was therefore applied to isolate the baseband spectrum.
+
+---
+
+##### Low-Pass Filter Implementation
+
+```python
+from scipy.signal import butter, filtfilt
+
+cutoff_hz = 2000
+
+b, a = butter(
+    5,
+    cutoff_hz /
+    (0.5 * sample_rate)
+)
+
+rx_baseband_filtered = filtfilt(
+    b,
+    a,
+    rx_complex_mixed
+)
+```
+
+---
+
+##### 5. Downsampling
+
+The transmitted waveform was previously oversampled to approximate a continuous-time signal.
+
+After filtering, the signal was returned to the original symbol-rate processing frequency.
+
+```python
+rx_downsampled = rx_baseband_filtered[
+    ::oversampling_factor
+]
+```
+
+This reduces computational complexity while preserving the transmitted information.
+
+---
+
+##### Simulation Results
+
+<div align="center">
+
+<img src="./assets/fig13.png" width="950"/>
+
+**Figure 13.3:** Recovered complex baseband waveform after downconversion, low-pass filtering, and downsampling.
+
+</div>
+
+---
+
+##### Observations
+
+- The RF carrier was successfully removed.
+- The complex envelope was recovered.
+- I/Q information remained intact.
+- Delay and Doppler distortions remained visible.
+- The signal was successfully prepared for constellation regeneration.
+
+---
+
+##### Key Understanding
+
+The receiver successfully reversed the RF upconversion process and recovered a complex baseband representation of the transmitted signal. Although the channel impairments remained present, the information-bearing waveform was preserved and prepared for symbol extraction and constellation reconstruction in the next stage.
