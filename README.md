@@ -880,7 +880,7 @@ The OTFS transmitter generates information-bearing signals around DC (0 Hz).
 
 These low-frequency signals cannot be efficiently radiated by practical antennas.
 
-Therefore, the signal must be translated to a higher carrier frequency \(f_c\) before transmission.
+Therefore, the signal must be translated to a higher carrier frequency $f_c$ before transmission.
 
 ---
 
@@ -898,8 +898,8 @@ $$
 
 where:
 
-- \(I(t)\) modulates the cosine carrier.
-- \(Q(t)\) modulates the sine carrier.
+- $I(t)$ modulates the cosine carrier.
+- $Q(t)$ modulates the sine carrier.
 
 The resulting waveform is real-valued and can be transmitted through an antenna.
 
@@ -1170,7 +1170,7 @@ x_{CP}[n]
 x_0,x_1,\dots,x_{N-1}]
 $$
 
-where \(N_{CP}\) denotes the cyclic prefix length.
+where $N_{CP}$ denotes the cyclic prefix length.
 
 This additional interval absorbs delayed multipath components before they reach the useful symbol region.
 
@@ -1269,7 +1269,7 @@ tx_with_cp = np.concatenate(slots_with_cp)
 
 **Observations**
 
-- The final \(N_{CP}\) samples of each symbol were successfully copied to the front of the symbol.
+- The final $N_{CP}$ samples of each symbol were successfully copied to the front of the symbol.
 - The useful information content remained unchanged.
 - The overall symbol duration increased from \(N\) samples to \(N + N_{CP}\) samples.
 - The generated waveform is now prepared for multipath channel simulations.
@@ -1349,9 +1349,9 @@ $$
 
 where
 
-- \(s(t)\) = transmitted signal
-- \(\tau_i\) = propagation delay
-- \(f_{D,i}\) = Doppler shift
+- $s(t)$ = transmitted signal
+- $\tau_i$ = propagation delay
+- $f_{D,i}$ = Doppler shift
 
 ---
 
@@ -1387,8 +1387,8 @@ $$
 
 where:
 
-- \(d_i\) is path length
-- \(c\) is speed of light
+- $d_i$ is path length
+- $c$ is speed of light
 
 The delayed copies begin later in the observation window and represent reflected signal arrivals.
 
@@ -1670,7 +1670,7 @@ Each path contains:
 - Phase distortion
 - Amplitude scaling
 
-The RF representation of path \(i\) can be expressed as
+The RF representation of path $i$ can be expressed as
 
 $$
 r_i(t)
@@ -1682,9 +1682,9 @@ $$
 
 where:
 
-- \(g_i\) is the path gain
-- \(\tau_i\) is the propagation delay
-- \(f_{D,i}\) is the Doppler shift
+- $g_i$ is the path gain
+- $\tau_i$ is the propagation delay
+- $f_{D,i}$ is the Doppler shift
 
 ---
 
@@ -1743,10 +1743,10 @@ $$
 
 where:
 
-- \(P\) is the number of propagation paths
-- \(g_i\) is the path gain
-- \(\tau_i\) is the delay
-- \(f_{D,i}\) is the Doppler frequency
+- $P$ is the number of propagation paths
+- $g_i$ is the path gain
+- $\tau_i$ is the delay
+- $f_{D,i}$ is the Doppler frequency
 
 ---
 
@@ -1939,7 +1939,7 @@ This reduces computational complexity while preserving the transmitted informati
 
 The receiver successfully reversed the RF upconversion process and recovered a complex baseband representation of the transmitted signal. Although the channel impairments remained present, the information-bearing waveform was preserved and prepared for symbol extraction and constellation reconstruction in the next stage.
 
-### **Day 15 (June 3, 2026): OTFS Demodulation Pipeline & Receiver-Side Signal Recovery**
+### **Day 15 (June 5, 2026): OTFS Demodulation Pipeline & Receiver-Side Signal Recovery**
 
 #### **Objectives**
 
@@ -1992,10 +1992,10 @@ $$
 
 where:
 
-- \(h_i\) is the path gain
-- \(\tau_i\) is the path delay
-- \(\nu_i\) is the Doppler shift
-- \(n(t)\) is additive noise
+- $h_i$ is the path gain
+- $\tau_i$ is the path delay
+- $\nu_i$ is the Doppler shift
+- $n(t)$ is additive noise
 
 The received waveform therefore remains heavily distorted.
 
@@ -2095,8 +2095,8 @@ $$
 
 where:
 
-- \(X_{TF}\) is the received time-frequency grid
-- \(\hat{D}\) is the recovered delay-Doppler grid
+- $X_{TF}$ is the received time-frequency grid
+- $\hat{D}$ is the recovered delay-Doppler grid
 
 This transformation maps the received signal back into the natural coordinate system of the wireless channel.
 
