@@ -1110,7 +1110,7 @@ The Heisenberg transform produces discrete-time waveform samples.
 
 Sinc interpolation provides a mathematical approximation of how those samples evolve into a smooth continuous-time signal suitable for RF transmission.
 
-### **Day 11 (May 30, 2026): Cyclic Prefix Insertion & Multipath Channel Preparation**
+### **Day 11 (June 1, 2026): Cyclic Prefix Insertion & Multipath Channel Preparation**
 
 #### **Objectives**
 
@@ -1301,7 +1301,7 @@ tx_with_cp = np.concatenate(slots_with_cp)
 
 The Cyclic Prefix does not increase data throughput or improve signal quality directly. Its primary purpose is to protect the useful symbol interval from delayed multipath echoes and enable efficient FFT-based processing at the receiver. This mechanism forms the foundation for studying multipath propagation, delay spread, and Inter-Symbol Interference in subsequent channel simulations.
 
-### **Day 12 (May 31, 2026): Delay–Doppler Channel Modeling & Individual Path Generation**
+### **Day 12(June 2, 2026): Delay–Doppler Channel Modeling & Individual Path Generation**
 
 #### Objectives
 
@@ -1644,7 +1644,7 @@ Instead, it generates multiple delayed and Doppler-shifted replicas that occupy 
 
 This forms the foundation of OTFS channel modeling.
 
-### **Day 13–14 (June 1–2, 2026): RF Multipath Synthesis, Receiver Downconversion & Complex Baseband Recovery**
+### **Day 13–14 (June 3-4, 2026): RF Multipath Synthesis, Receiver Downconversion & Complex Baseband Recovery**
 
 #### **Objectives**
 
@@ -1938,3 +1938,231 @@ This reduces computational complexity while preserving the transmitted informati
 ##### Key Understanding
 
 The receiver successfully reversed the RF upconversion process and recovered a complex baseband representation of the transmitted signal. Although the channel impairments remained present, the information-bearing waveform was preserved and prepared for symbol extraction and constellation reconstruction in the next stage.
+
+### **Day 15 (June 3, 2026): OTFS Demodulation Pipeline & Receiver-Side Signal Recovery**
+
+#### **Objectives**
+
+1. Understand why demodulation is the most critical stage of the OTFS receiver.
+2. Study the reverse processing chain used to recover transmitted information.
+3. Understand the purpose of CP removal, Wigner transformation, and SFFT operations.
+4. Analyze how OTFS converts channel distortion into a structured delay-Doppler representation.
+5. Establish the theoretical foundation required before hardware implementation.
+
+---
+
+##### 1. Why Demodulation Matters
+
+At the conclusion of the previous stage, the receiver had successfully recovered a complex baseband signal.
+
+However, this waveform still contained:
+
+- Multipath distortion
+- Delay spread
+- Doppler spread
+- Fading effects
+- Phase rotation
+
+The received waveform no longer resembled the original transmitted symbol sequence.
+
+Consequently, direct symbol detection would produce a large number of errors.
+
+The purpose of the OTFS receiver is therefore not to prevent channel distortion but to reverse its effects and recover the original information symbols.
+
+---
+
+##### 2. The Misconception About OTFS
+
+A common misunderstanding is that OTFS eliminates multipath and Doppler effects.
+
+In reality, OTFS does not remove these impairments during transmission.
+
+The wireless channel still produces
+
+$$
+r(t)
+=
+\sum_{i=1}^{P}
+h_i
+s(t-\tau_i)
+e^{j2\pi \nu_i t}
++
+n(t)
+$$
+
+where:
+
+- \(h_i\) is the path gain
+- \(\tau_i\) is the path delay
+- \(\nu_i\) is the Doppler shift
+- \(n(t)\) is additive noise
+
+The received waveform therefore remains heavily distorted.
+
+The advantage of OTFS is that it provides a mathematical framework that allows these distortions to be represented and compensated efficiently in the delay-Doppler domain.
+
+---
+
+##### 3. Reverse Signal Processing Chain
+
+The transmitter performed the following operations:
+
+```text
+Bits
+ ↓
+16-QAM Mapping
+ ↓
+Delay-Doppler Grid
+ ↓
+ISFFT
+ ↓
+Heisenberg Transform
+ ↓
+RF Upconversion
+ ↓
+Wireless Channel
+```
+
+The receiver performs the reverse sequence:
+
+```text
+Received RF Signal
+ ↓
+Downconversion
+ ↓
+Complex Baseband
+ ↓
+CP Removal
+ ↓
+Wigner Transform
+ ↓
+Time-Frequency Grid
+ ↓
+SFFT
+ ↓
+Delay-Doppler Grid
+ ↓
+Equalization
+ ↓
+QAM Detection
+ ↓
+Recovered Bits
+```
+
+The receiver therefore acts as the inverse of the transmitter.
+
+---
+
+##### 4. Cyclic Prefix Removal
+
+The first processing stage removes the cyclic prefix introduced at the transmitter.
+
+The cyclic prefix absorbed delayed echoes produced by multipath propagation.
+
+After reception, the guard interval no longer contains useful information and is discarded.
+
+This operation restores the original symbol boundaries required for transform-domain processing.
+
+---
+
+##### 5. Wigner Transform
+
+Following CP removal, the receiver applies an FFT operation.
+
+This stage converts the received time-domain waveform into a time-frequency representation.
+
+The resulting grid corresponds to the transmitted OTFS frame after propagation through the wireless channel.
+
+Unlike the delay-Doppler grid used at the transmitter, this representation now contains channel-induced distortion.
+
+---
+
+##### 6. Symplectic Finite Fourier Transform (SFFT)
+
+The most important receiver operation is the Symplectic Finite Fourier Transform.
+
+The SFFT performs the inverse operation of the transmitter ISFFT.
+
+Mathematically,
+
+$$
+\hat{D}
+=
+W_M^{-1}
+X_{TF}
+W_N
+$$
+
+where:
+
+- \(X_{TF}\) is the received time-frequency grid
+- \(\hat{D}\) is the recovered delay-Doppler grid
+
+This transformation maps the received signal back into the natural coordinate system of the wireless channel.
+
+---
+
+##### 7. Why OTFS Uses Delay-Doppler Processing
+
+The physical wireless environment naturally operates in terms of:
+
+- Delay
+- Doppler
+
+Every propagation path can be described by:
+
+- How late it arrives
+- How much frequency shift it experiences
+
+In the delay-Doppler domain, channel effects often appear as a small number of dominant coefficients rather than a large dense interference pattern.
+
+This sparsity makes channel estimation and equalization significantly more manageable.
+
+---
+
+##### 8. Equalization & Symbol Recovery
+
+Once the delay-Doppler grid is recovered, the receiver estimates the channel and compensates for its effects.
+
+The equalized symbols are then mapped back to the nearest valid QAM constellation locations.
+
+The resulting symbols are converted back into binary data.
+
+This final stage completes the communication process.
+
+---
+
+##### Why Demodulation Is The Most Important Step
+
+The transmitter simply prepares the signal for transmission.
+
+The wireless channel subsequently introduces:
+
+- Delay spread
+- Doppler spread
+- Multipath fading
+- Phase distortion
+
+Without the receiver-side demodulation chain, these impairments remain embedded within the waveform.
+
+The purpose of demodulation is therefore to convert a distorted electromagnetic signal back into structured digital information.
+
+The effectiveness of OTFS is determined not by how the signal is transmitted, but by how effectively the receiver can reconstruct the original delay-Doppler information after propagation through the channel.
+
+---
+
+##### Key Understanding
+
+The strength of OTFS does not lie in preventing multipath propagation or Doppler distortion. These impairments remain present throughout transmission.
+
+Instead, OTFS enables the receiver to transform a complicated doubly-dispersive wireless channel into a structured delay-Doppler representation that can be estimated, equalized, and decoded efficiently.
+
+The demodulation process is therefore the most important stage of the OTFS receiver because it is responsible for converting a distorted electromagnetic waveform back into usable digital information.
+
+---
+
+##### Conclusion
+
+This session consolidated the complete OTFS receiver pipeline and established the theoretical framework required for receiver implementation. Understanding the role of demodulation is critical before transitioning toward FPGA-oriented architecture studies, hardware mapping strategies, and OTFS accelerator design.
+
+Future work will focus on studying OTFS hardware architectures, FPGA implementation techniques, and accelerator design methodologies required for real-time deployment.
