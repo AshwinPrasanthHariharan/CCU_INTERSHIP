@@ -2169,7 +2169,7 @@ Future work will focus on studying OTFS hardware architectures, FPGA implementat
 
 ---
 
-### Day 16 (June XX, 2026): Wireless Propagation Physics and the Motivation for Reconfigurable Intelligent Surfaces
+### Day 16 (June 8, 2026): Wireless Propagation Physics and the Motivation for Reconfigurable Intelligent Surfaces
 
 #### Objectives
 
@@ -2445,7 +2445,7 @@ The RIS effectively transforms the wireless environment from a passive obstacle 
 
 ---
 
-### Day 17 (June XX, 2026): Signal Processing Foundations for RIS Systems
+### Day 17 (June 9, 2026): Signal Processing Foundations for RIS Systems
 
 #### Objectives
 
