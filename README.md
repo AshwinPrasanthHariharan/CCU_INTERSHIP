@@ -2166,3 +2166,740 @@ The demodulation process is therefore the most important stage of the OTFS recei
 This session consolidated the complete OTFS receiver pipeline and established the theoretical framework required for receiver implementation. Understanding the role of demodulation is critical before transitioning toward FPGA-oriented architecture studies, hardware mapping strategies, and OTFS accelerator design.
 
 Future work will focus on studying OTFS hardware architectures, FPGA implementation techniques, and accelerator design methodologies required for real-time deployment.
+
+---
+
+### Day 16 (June XX, 2026): Wireless Propagation Physics and the Motivation for Reconfigurable Intelligent Surfaces
+
+#### Objectives
+
+* Understand the physical limitations of wireless propagation.
+* Study free-space electromagnetic wave propagation.
+* Examine free-space path loss and the inverse-square law.
+* Understand the Friis transmission equation.
+* Investigate Line-of-Sight (LOS) and Non-Line-of-Sight (NLOS) communication.
+* Study reflection, diffraction, and scattering mechanisms.
+* Understand multipath propagation.
+* Establish the physical motivation behind Reconfigurable Intelligent Surfaces (RIS).
+
+---
+
+##### 1. Introduction
+
+Modern wireless communication systems—including WiFi, 5G, Massive MIMO, OTFS, and future 6G technologies—rely on the transmission of electromagnetic waves through free space.
+
+Regardless of the sophistication of signal processing algorithms, wireless performance is fundamentally constrained by electromagnetic propagation. A major challenge is that electromagnetic energy naturally spreads as it propagates, causing only a tiny fraction of the transmitted power to reach the intended receiver.
+
+This observation forms the primary motivation behind Reconfigurable Intelligent Surfaces (RIS).
+
+---
+
+##### 2. Free-Space Propagation
+
+When a transmitter radiates electromagnetic energy, the energy spreads outward in all directions.
+
+For an ideal isotropic radiator, the transmitted power is distributed uniformly over the surface of a sphere.
+
+The surface area of a sphere of radius $d$ is
+
+$$
+A_{sphere}=4\pi d^2
+$$
+
+Since the same transmitted power is distributed over an increasingly larger area, the power density decreases with distance.
+
+The received power can be approximated by
+
+$$
+P_r=P_t\frac{A_e}{4\pi d^2}
+$$
+
+where:
+
+* $P_t$ = transmitted power
+* $P_r$ = received power
+* $A_e$ = effective aperture of the receiving antenna
+* $d$ = propagation distance
+
+This relationship demonstrates the inverse-square law:
+
+$$
+P_r\propto \frac{1}{d^2}
+$$
+
+---
+
+##### 3. Numerical Example
+
+For a carrier frequency of approximately 3 GHz:
+
+$$
+\lambda = 0.1;m
+$$
+
+and an effective receiving area
+
+$$
+A_e=\left(\frac{\lambda}{4}\right)^2
+$$
+
+the received power fractions become:
+
+###### At 1 m
+
+$$
+\frac{P_r}{P_t}\approx0.005%
+$$
+
+or approximately
+
+$$
+-43;dB
+$$
+
+###### At 10 m
+
+$$
+\frac{P_r}{P_t}\approx0.00005%
+$$
+
+or approximately
+
+$$
+-63;dB
+$$
+
+Even under ideal free-space conditions, more than 99.999% of the transmitted power is lost.
+
+This highlights one of the fundamental difficulties of wireless communication.
+
+---
+
+##### 4. Propagation Challenges
+
+In practical wireless environments, the situation is significantly worse than free-space propagation.
+
+Signals encounter:
+
+* Walls
+* Buildings
+* Vehicles
+* Furniture
+* Human bodies
+
+These objects introduce attenuation and create multiple propagation paths.
+
+A single wall can introduce losses exceeding
+
+$$
+20;dB
+$$
+
+which corresponds to approximately a 100-fold reduction in received power.
+
+---
+
+##### 5. Line-of-Sight and Non-Line-of-Sight Communication
+
+###### Line-of-Sight (LOS)
+
+In LOS communication, a direct path exists between the transmitter and receiver.
+
+The received signal can be represented as
+
+$$
+r(t)=\alpha s(t-\tau)
+$$
+
+where:
+
+* $\alpha$ is the attenuation coefficient
+* $\tau$ is the propagation delay
+
+LOS links generally provide the strongest received signal.
+
+###### Non-Line-of-Sight (NLOS)
+
+In many practical situations, the direct path is blocked.
+
+Communication then depends on indirect propagation mechanisms such as:
+
+* Reflection
+* Diffraction
+* Scattering
+
+NLOS links typically experience significantly higher path loss and lower reliability.
+
+---
+
+##### 6. Reflection
+
+Reflection occurs when an electromagnetic wave encounters a smooth surface.
+
+Examples include:
+
+* Building facades
+* Glass walls
+* Metal structures
+
+The reflected wave follows the law of reflection:
+
+$$
+\theta_i=\theta_r
+$$
+
+where:
+
+* $\theta_i$ = angle of incidence
+* $\theta_r$ = angle of reflection
+
+Reflections often provide alternative communication paths when the direct path is blocked.
+
+---
+
+##### 7. Diffraction
+
+Diffraction allows electromagnetic waves to bend around edges and obstacles.
+
+This phenomenon enables communication even when a direct optical path is unavailable.
+
+Without diffraction, wireless coverage behind buildings and corners would be severely limited.
+
+---
+
+##### 8. Scattering
+
+Scattering occurs when the dimensions of surface irregularities become comparable to the signal wavelength.
+
+Instead of producing a single reflected wave, the incident energy is redistributed into multiple directions.
+
+Examples include:
+
+* Rough walls
+* Vegetation
+* Human bodies
+* Urban clutter
+
+Scattering contributes significantly to multipath propagation.
+
+---
+
+##### 9. Multipath Propagation
+
+Because of reflections, diffraction, and scattering, multiple copies of the transmitted signal may arrive at the receiver.
+
+A multipath channel can be modeled as
+
+$$
+r(t)=
+\sum_{i=1}^{L}
+\alpha_i s(t-\tau_i)
+$$
+
+where:
+
+* $L$ = number of propagation paths
+* $\alpha_i$ = attenuation of the $i^{th}$ path
+* $\tau_i$ = delay of the $i^{th}$ path
+
+Each path experiences different attenuation and delay, causing constructive and destructive interference.
+
+Multipath propagation forms the basis of modern wireless channel models and later motivates the signal-processing framework used for RIS systems.
+
+---
+
+##### 10. Motivation for Reconfigurable Intelligent Surfaces
+
+Traditional wireless systems treat the propagation environment as uncontrollable.
+
+Walls and objects reflect signals in unpredictable directions, often causing severe signal degradation.
+
+Reconfigurable Intelligent Surfaces introduce a new paradigm by making the environment programmable.
+
+An RIS consists of a large number of controllable reflecting elements whose electromagnetic properties can be adjusted electronically.
+
+Instead of relying on random reflections, the RIS can intentionally redirect energy toward desired users.
+
+Potential benefits include:
+
+* Improved indoor coverage
+* Reduced shadow fading
+* Enhanced signal strength
+* Better spectral efficiency
+* Increased energy efficiency
+
+The RIS effectively transforms the wireless environment from a passive obstacle into an active component of the communication system.
+
+---
+
+##### Daily Outcome
+
+* Understood the physical limitations of wireless propagation.
+* Studied free-space path loss and the inverse-square law.
+* Examined practical propagation losses in wireless systems.
+* Learned the distinction between LOS and NLOS communication.
+* Investigated reflection, diffraction, and scattering mechanisms.
+* Developed the multipath channel model.
+* Established the fundamental motivation behind Reconfigurable Intelligent Surfaces.
+* Prepared the foundation for developing mathematical signal-processing models of RIS-assisted wireless communication.
+
+---
+
+### Day 17 (June XX, 2026): Signal Processing Foundations for RIS Systems
+
+#### Objectives
+
+* Model wireless communication channels as Linear Time-Invariant (LTI) systems.
+* Understand convolution and impulse response representations.
+* Develop the multipath channel model.
+* Study frequency-domain channel representations.
+* Learn complex baseband signal modeling.
+* Understand pulse amplitude modulation (PAM).
+* Study pulse shaping and the Nyquist criterion.
+* Investigate matched filtering and receiver sampling.
+* Develop the discrete-time communication model.
+* Introduce the end-to-end RIS channel model.
+
+---
+
+#### 1. Introduction
+
+In the previous session, wireless propagation was studied from a physical perspective. Electromagnetic waves experience attenuation, reflection, diffraction, and scattering as they travel through the environment.
+
+To design communication systems and RIS-assisted wireless links, a mathematical model of the wireless channel is required. Rather than describing every electromagnetic interaction individually, communication theory models the wireless channel as a signal-processing system.
+
+This signal-processing framework forms the basis for modern wireless technologies including OFDM, Massive MIMO, OTFS, and RIS-assisted communications.
+
+---
+
+#### 2. Communication Channels as LTI Systems
+
+A wireless communication channel can be modeled as a Linear Time-Invariant (LTI) system.
+
+The transmitted signal is denoted by
+
+$$
+x(t)
+$$
+
+and the received signal is
+
+$$
+y(t)
+$$
+
+The relationship between them is given by convolution:
+
+$$
+y(t)=h(t)*x(t)
+$$
+
+or equivalently,
+
+$$
+y(t)=\int_{-\infty}^{\infty}h(\tau)x(t-\tau)d\tau
+$$
+
+where
+
+$$
+h(t)
+$$
+
+is the channel impulse response.
+
+The impulse response completely characterizes the wireless channel.
+
+---
+
+#### 3. Physical Meaning of the Impulse Response
+
+Consider transmitting an ideal impulse:
+
+$$
+\delta(t)
+$$
+
+through the channel.
+
+The received signal becomes
+
+$$
+h(t)
+$$
+
+Therefore, the impulse response describes how the channel reacts to the simplest possible input.
+
+Every reflection, propagation delay, attenuation factor, and scattering mechanism is embedded within
+
+$$
+h(t)
+$$
+
+making it a complete description of the communication channel.
+
+---
+
+#### 4. Single-Path Wireless Channel
+
+Suppose only one propagation path exists between the transmitter and receiver.
+
+The channel impulse response can be modeled as
+
+$$
+h(t)=\rho\delta(t-\tau)
+$$
+
+where:
+
+* $\rho$ = attenuation coefficient
+* $\tau$ = propagation delay
+
+Substituting into the convolution equation gives
+
+$$
+y(t)=\rho x(t-\tau)
+$$
+
+The channel simply delays and attenuates the transmitted waveform.
+
+---
+
+#### 5. Multipath Channel Model
+
+In practical wireless systems, signals propagate through multiple paths due to reflection, diffraction, and scattering.
+
+The channel impulse response becomes
+
+$$
+h(t)=
+\sum_{i=1}^{L}
+\rho_i\delta(t-\tau_i)
+$$
+
+where:
+
+* $L$ = number of propagation paths
+* $\rho_i$ = gain of the $i^{th}$ path
+* $\tau_i$ = delay of the $i^{th}$ path
+
+This is the fundamental multipath channel model used throughout wireless communications.
+
+---
+
+#### 6. Received Signal Under Multipath Propagation
+
+Substituting the multipath impulse response into the convolution equation yields
+
+$$
+y(t)=
+\sum_{i=1}^{L}
+\rho_i x(t-\tau_i)
+$$
+
+The receiver therefore observes multiple delayed and attenuated copies of the transmitted signal.
+
+Each copy arrives with different amplitude and phase.
+
+---
+
+#### 7. Constructive and Destructive Interference
+
+The multiple signal copies combine at the receiver.
+
+When their phases align:
+
+##### Constructive Interference
+
+The signal components add together and strengthen the received signal.
+
+When their phases oppose each other:
+
+##### Destructive Interference
+
+The signal components cancel each other and reduce the received signal strength.
+
+This phenomenon leads to fading, one of the most significant challenges in wireless communication.
+
+---
+
+#### 8. Frequency-Domain Channel Representation
+
+Communication systems are often analyzed in the frequency domain.
+
+Applying the Fourier Transform to the convolution equation gives
+
+$$
+Y(f)=H(f)X(f)
+$$
+
+where
+
+$$
+H(f)=\mathcal{F}{h(t)}
+$$
+
+is the channel frequency response.
+
+The frequency response describes how different frequency components are modified by the wireless channel.
+
+---
+
+#### 9. Complex Baseband Representation
+
+Wireless signals are physically transmitted at radio frequencies.
+
+A passband signal can be expressed as
+$$
+x_{PB}(t) = \text{Re}\left\{x(t)e^{j2\pi f_c t}\right\}
+$$
+where:
+
+* $x(t)$ = complex baseband signal
+* $f_c$ = carrier frequency
+
+The complex baseband representation allows communication systems to process signals without explicitly handling GHz-frequency carriers.
+
+This greatly simplifies analysis and implementation.
+
+---
+
+#### 10. Baseband Equivalent Channel
+
+The passband channel can similarly be converted into a baseband representation.
+
+Instead of analyzing carrier-frequency oscillations directly, communication systems operate on the slowly varying complex envelope.
+
+This forms the basis of modern digital communication theory.
+
+---
+
+#### 11. Pulse Amplitude Modulation (PAM)
+
+Digital information is represented as a sequence of symbols:
+
+$$
+x[0],x[1],x[2],...
+$$
+
+Since wireless channels transmit continuous-time waveforms, these discrete symbols must be converted into a continuous signal.
+
+Pulse Amplitude Modulation (PAM) performs this conversion:
+
+$$
+x(t)
+=
+\sum_m
+x[m]p\left(t-\frac{m}{B}\right)
+$$
+
+where:
+
+* $x[m]$ = transmitted symbols
+* $p(t)$ = pulse shape
+* $B$ = symbol rate
+
+Each symbol scales a shifted copy of the pulse shape.
+
+The transmitted waveform is the sum of all pulse contributions.
+
+---
+
+#### 12. Pulse Shaping
+
+Pulse shaping controls the spectral characteristics of the transmitted signal.
+
+Without pulse shaping:
+
+* Bandwidth becomes excessive.
+* Neighboring symbols interfere.
+* Receiver performance degrades.
+
+Pulse shaping allows communication systems to:
+
+* Limit occupied bandwidth.
+* Improve symbol detection.
+* Reduce interference.
+
+---
+
+#### 13. Sinc Pulse and Nyquist Criterion
+
+An ideal pulse shape is the sinc pulse:
+
+$$
+p(t)=B,\text{sinc}(Bt)
+$$
+
+This pulse satisfies the Nyquist criterion:
+
+$$
+p(kT)=0
+\quad
+\text{for}
+\quad
+k\neq0
+$$
+
+where
+
+$$
+T=\frac{1}{B}
+$$
+
+is the symbol period.
+
+The Nyquist criterion ensures that symbols can be recovered without interference from neighboring symbols.
+
+---
+
+#### 14. Inter-Symbol Interference (ISI)
+
+If the pulse shape does not satisfy the Nyquist criterion, neighboring symbols overlap.
+
+The sampled signal becomes
+
+$$
+y[k] = x[k] + \text{ISI}
+$$
+
+where ISI denotes Inter-Symbol Interference.
+
+ISI significantly degrades communication performance and motivates careful pulse-shaping design.
+
+---
+
+#### 15. Matched Filtering
+
+At the receiver, the incoming signal is filtered using a matched filter:
+
+$$
+z(t)=p(t)*y(t)
+$$
+
+The matched filter:
+
+* Maximizes signal-to-noise ratio (SNR).
+* Collects signal energy.
+* Improves detection performance.
+
+Matched filtering is a fundamental component of digital communication receivers.
+
+---
+
+#### 16. Sampling and Symbol Recovery
+
+After matched filtering, the receiver samples the signal at symbol intervals:
+
+$$
+z[k]=z(kT)
+$$
+
+where
+
+$$
+T=\frac{1}{B}
+$$
+
+is the symbol period.
+
+This operation converts the received waveform back into discrete symbols suitable for digital processing.
+
+---
+
+#### 17. Noise Model
+
+Practical communication systems are affected by thermal and electronic noise.
+
+The received signal is modeled as
+
+$$
+y(t)=h(t)*x(t)+w(t)
+$$
+
+where
+
+$$
+w(t)
+$$
+
+represents additive white Gaussian noise (AWGN).
+
+After filtering and sampling, the noise becomes
+
+$$
+n[k]\sim CN(0,N_0)
+$$
+
+where:
+
+* $CN$ denotes a complex Gaussian distribution.
+* $N_0$ is the noise power.
+
+---
+
+#### 18. Narrowband Channel Approximation
+
+For narrowband communication systems, the channel can often be approximated as
+
+$$
+h(t)\approx C\delta(t-\tau)
+$$
+
+where
+
+$$
+C
+$$
+
+is a complex channel coefficient.
+
+This approximation greatly simplifies analysis.
+
+---
+
+#### 19. Final Discrete-Time Communication Model
+
+Combining pulse shaping, propagation, matched filtering, and sampling results in the discrete-time communication model
+
+$$
+z[k]=Cx[k]+n[k]
+$$
+
+This compact equation forms the foundation of most modern wireless communication systems.
+
+---
+
+#### 20. RIS End-to-End Channel Model
+
+For RIS-assisted communication, the received channel contains both a direct path and RIS-assisted paths.
+
+The end-to-end impulse response can be expressed as
+
+$$
+h_{RIS}(t) = h_d(t) + \sum_{n=1}^{N}\left(b_n*\vartheta_n*a_n\right)(t)
+$$
+
+where:
+
+* $h_d(t)$ = direct channel
+* $a_n(t)$ = transmitter-to-RIS channel
+* $\vartheta_n(t)$ = RIS element response
+* $b_n(t)$ = RIS-to-receiver channel
+
+This model establishes RIS as a controllable component within the wireless propagation environment.
+
+---
+
+#### Daily Outcome
+
+* Modeled wireless channels as LTI systems.
+* Derived convolution-based channel representations.
+* Developed the multipath wireless channel model.
+* Studied frequency-domain channel analysis.
+* Learned complex baseband signal representation.
+* Understood pulse amplitude modulation and pulse shaping.
+* Investigated the Nyquist criterion and ISI.
+* Studied matched filtering and receiver sampling.
+* Derived the discrete-time communication model.
+* Introduced the end-to-end RIS channel model used in RIS-assisted communication systems.
