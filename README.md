@@ -2903,3 +2903,904 @@ This model establishes RIS as a controllable component within the wireless propa
 * Studied matched filtering and receiver sampling.
 * Derived the discrete-time communication model.
 * Introduced the end-to-end RIS channel model used in RIS-assisted communication systems.
+
+---
+
+### Day 18 (June 10, 2026): RIS Hardware Fundamentals and End-to-End Channel Modeling
+
+#### Objectives
+
+* Understand how an RIS physically manipulates electromagnetic waves.
+* Study the structure of RIS unit cells.
+* Investigate tunable impedance and reflection coefficients.
+* Understand voltage-controlled phase shifting.
+* Develop the end-to-end RIS channel model.
+* Derive the narrowband RIS communication model.
+* Connect electromagnetic behavior to communication-theoretic channel models.
+
+---
+
+#### 1. Introduction
+
+Previous sessions established the fundamentals of wireless propagation and signal-processing-based channel modeling.
+
+The next step is understanding how a Reconfigurable Intelligent Surface (RIS) physically interacts with electromagnetic waves and how this interaction is incorporated into communication system models.
+
+An RIS acts as a programmable electromagnetic boundary capable of modifying the phase, amplitude, and direction of reflected waves.
+
+Unlike conventional reflectors, RIS elements can be electronically controlled, allowing the propagation environment itself to become part of the communication system.
+
+---
+
+#### 2. Structure of a Reconfigurable Intelligent Surface
+
+An RIS consists of a large array of sub-wavelength electromagnetic elements known as unit cells.
+
+Each unit cell typically contains:
+
+* Metallic patch
+* Dielectric substrate
+* Tunable electronic component
+* Control circuitry
+
+The dimensions of each element are generally much smaller than the operating wavelength.
+
+Because the elements are sub-wavelength in size, the RIS can approximate a programmable electromagnetic surface.
+
+A practical RIS may contain hundreds or thousands of such elements.
+
+---
+
+#### 3. RIS Unit Cell Operation
+
+Consider an electromagnetic wave incident upon an RIS element.
+
+Unlike a conventional reflector, the RIS element modifies the reflected signal according to its electrical configuration.
+
+By electronically changing the element's impedance, the phase and amplitude of the reflected signal can be controlled.
+
+This allows the RIS to steer electromagnetic energy toward desired directions.
+
+---
+
+#### 4. Reflection Coefficient
+
+The interaction between an electromagnetic wave and an RIS element is characterized by the reflection coefficient.
+
+The reflection coefficient is given by
+
+$$
+\Gamma
+=
+\frac{Z(V)-Z_0}{Z(V)+Z_0}
+$$
+
+where
+
+* $Z(V)$ = voltage-controlled impedance of the RIS element
+* $Z_0$ = free-space impedance
+* $\Gamma$ = complex reflection coefficient
+
+The reflection coefficient determines:
+
+* reflected amplitude
+* reflected phase
+
+The RIS controller adjusts the voltage applied to each element to modify $Z(V)$.
+
+---
+
+#### 5. Varactor Diodes and Tunable Impedance
+
+Modern RIS implementations frequently employ varactor diodes.
+
+A varactor diode behaves as a voltage-controlled capacitor.
+
+Changing the bias voltage modifies the effective capacitance of the RIS element.
+
+Consequently,
+
+$$
+V \rightarrow C(V) \rightarrow Z(V) \rightarrow \Gamma
+$$
+
+This chain allows software control of electromagnetic reflections.
+
+---
+
+#### 6. Voltage-Controlled Phase Shifting
+
+The reflection coefficient is complex:
+
+$$
+\Gamma = |\Gamma|e^{j\phi}
+$$
+
+where
+
+* $|\Gamma|$ = reflection magnitude
+* $\phi$ = reflection phase
+
+Changing the bias voltage alters the reflection phase.
+
+This phase shift is the fundamental mechanism enabling RIS beamforming.
+
+Each RIS element can therefore impose a controllable phase delay on the reflected wave.
+
+---
+
+#### 7. RIS as a Programmable Reflector
+
+Consider an incoming wave:
+
+$$
+s(t)
+$$
+
+Each RIS element reflects a modified version:
+
+$$
+\Gamma_n s(t)
+$$
+
+where
+
+$$
+\Gamma_n = |\Gamma_n|e^{j\phi_n}
+$$
+
+is the reflection coefficient of the $n^{th}$ element.
+
+The total reflected field becomes
+
+$$
+E_r=\sum_{n=1}^{N} \Gamma_n E_n
+$$
+
+where
+
+$$
+E_n
+$$
+
+represents the incident field at the $n^{th}$ element.
+
+The RIS controller adjusts
+
+$$
+\phi_n
+$$
+
+to manipulate the resulting reflected beam.
+
+---
+
+#### 8. End-to-End RIS Channel Model
+
+The RIS-assisted communication channel consists of three components:
+
+1. Direct transmitter-to-receiver path
+2. Transmitter-to-RIS path
+3. RIS-to-receiver path
+
+The complete impulse response can be represented as
+
+$$
+h_{RIS}(t) = h_d(t) + \sum_{n=1}^{N} \left(b_n\vartheta_n*a_n\right)(t)
+$$
+
+where
+
+* $h_d(t)$ = direct channel
+* $a_n(t)$ = transmitter-to-RIS channel
+* $\vartheta_n(t)$ = RIS element response
+* $b_n(t)$ = RIS-to-receiver channel
+
+---
+
+#### 9. Physical Interpretation of the Cascaded Model
+
+The RIS-assisted signal experiences three sequential systems:
+
+##### Stage 1
+
+Transmitter → RIS
+
+$$
+a_n(t)
+$$
+
+---
+
+##### Stage 2
+
+RIS Processing
+
+$$
+\vartheta_n(t)
+$$
+
+---
+
+##### Stage 3
+
+RIS → Receiver
+
+$$
+b_n(t)
+$$
+
+Since these systems operate sequentially, their combined effect is represented by convolution.
+
+The RIS therefore appears as a cascaded communication channel.
+
+---
+
+#### 10. Narrowband Approximation
+
+For many communication systems, the signal bandwidth is sufficiently small that channel variations across frequency can be neglected.
+
+Under this assumption,
+
+$$
+h(t) \approx C\delta(t-\tau)
+$$
+
+where
+
+* $C$ = complex channel coefficient
+* $\tau$ = propagation delay
+
+This approximation greatly simplifies RIS analysis.
+
+---
+
+#### 11. Narrowband RIS Communication Model
+
+Under the narrowband assumption, the received signal becomes
+
+$$
+y=\left(h_d + \sum_{n=1}^{N} g_n\theta_n f_n \right)x+n
+$$
+
+where
+
+* $h_d$ = direct channel coefficient
+* $f_n$ = transmitter-to-RIS channel
+* $g_n$ = RIS-to-receiver channel
+* $\theta_n$ = RIS phase control coefficient
+* $n$ = noise
+
+This equation is one of the most important models in RIS communication theory.
+
+---
+
+#### 12. Meaning of RIS Phase Control
+
+The parameter
+
+$$
+\theta_n = e^{j\phi_n}
+$$
+
+represents the programmable phase shift introduced by the RIS.
+
+By selecting
+
+$$
+\phi_n
+$$
+
+appropriately, all reflected signals can be forced to arrive at the receiver with aligned phases.
+
+This leads to constructive interference and significant signal enhancement.
+
+---
+
+#### 13. Transition Toward Beamforming
+
+The narrowband RIS model reveals that communication performance depends strongly on the selected phase shifts
+
+$$
+\theta_1,\theta_2,\ldots,\theta_N
+$$
+
+The next step is determining how these phase shifts should be chosen to maximize received signal power.
+
+This leads directly to RIS beamforming and optimization.
+
+---
+
+#### Daily Outcome
+
+* Studied the physical structure of RIS hardware.
+* Investigated tunable impedance and reflection coefficients.
+* Learned how varactor diodes enable programmable reflections.
+* Understood voltage-controlled phase shifting.
+* Developed the cascaded RIS channel model.
+* Derived the narrowband RIS communication model.
+* Established the mathematical foundation for RIS beamforming and optimization.
+
+---
+
+### Day 19 (June 11, 2026): RIS Beamforming, Coherent Combining, and Passive Beamforming Gain
+
+#### Objectives
+
+- Understand how RIS controls signal propagation.
+- Study coherent combining and phase alignment.
+- Derive optimal RIS phase shifts.
+- Understand passive beamforming.
+- Investigate RIS power scaling laws.
+- Derive the famous \(N^2\) gain.
+- Formulate RIS optimization problems.
+
+---
+
+#### 1. Introduction
+
+The narrowband RIS communication model derived previously is
+
+$$
+y=
+\left(
+h_d
++
+\sum_{n=1}^{N}
+g_n\theta_nf_n
+\right)x+n
+$$
+
+where:
+
+- $h_d$ = direct channel
+- $f_n$ = transmitter-to-RIS channel
+- $g_n$ = RIS-to-receiver channel
+- $\theta_n$ = RIS phase control coefficient
+
+The primary goal of RIS beamforming is to select the phase shifts
+
+$$
+\theta_1,\theta_2,\ldots,\theta_N
+$$
+
+such that all reflected signals combine constructively at the receiver.
+
+---
+
+#### 2. Random Reflections vs Controlled Reflections
+
+Without RIS control, reflected signals arrive with random phases.
+
+The received reflected field is
+
+$$
+\sum_{n=1}^{N}
+g_nf_n
+$$
+
+Because phases are random:
+
+- Some components add constructively.
+- Some components cancel each other.
+
+As a result, much of the reflected energy is wasted.
+
+---
+
+#### 3. Principle of Coherent Combining
+
+Each reflected contribution can be written as
+
+$$
+g_n f_n
+=
+|g_n f_n|
+e^{j\phi_n}
+$$
+
+where
+
+$$
+\phi_n
+=
+\angle g_n + \angle f_n
+$$
+
+represents the total propagation phase.
+
+The RIS can introduce an additional phase shift
+
+$$
+\theta_n=e^{-j\phi_n}
+$$
+
+so that
+
+$$
+g_n\theta_nf_n
+=
+|g_n||f_n|
+$$
+
+becomes purely real and positive.
+
+All reflected components now arrive in phase.
+
+---
+
+#### 4. Optimal RIS Phase Design
+
+The optimal RIS phase shift is
+
+$$
+\theta_n
+=
+e^{-j(\angle g_n+\angle f_n)}
+$$
+
+Substituting into the received signal model gives
+
+$$
+y=
+\left(
+h_d+
+\sum_{n=1}^{N}
+|g_n||f_n|
+\right)x+n
+$$
+
+All reflected paths now contribute constructively.
+
+---
+
+#### 5. Passive Beamforming
+
+Traditional phased arrays employ:
+
+- RF chains
+- Mixers
+- DACs
+- Power amplifiers
+
+RIS elements do not generate new signals.
+
+Instead, they manipulate existing electromagnetic waves.
+
+Therefore RIS performs
+
+##### Passive Beamforming
+
+Advantages:
+
+- Very low power consumption
+- No RF chains
+- Low hardware complexity
+- Scalable implementation
+
+---
+
+#### 6. Received Signal Enhancement
+
+Assume each RIS element contributes approximately
+
+$$
+a
+$$
+
+units of signal amplitude.
+
+The total received amplitude becomes
+
+$$
+A_{total}
+=
+Na
+$$
+
+Consequently,
+
+$$
+P_r
+=
+|A_{total}|^2
+$$
+
+giving
+
+$$
+P_r
+=
+N^2a^2
+$$
+
+Therefore
+
+$$
+P_r \propto N^2
+$$
+
+---
+
+#### 7. RIS Gain Scaling Law
+
+This result is known as the RIS quadratic power scaling law.
+
+##### Conventional Reflection
+
+Random phases:
+
+$$
+P_r\propto N
+$$
+
+##### RIS Reflection
+
+Phase-aligned reflections:
+
+$$
+P_r\propto N^2
+$$
+
+This quadratic scaling is one of the major theoretical motivations for large RIS deployments.
+
+---
+
+#### 8. Beam Steering
+
+The RIS can shape the reflected wavefront.
+
+By selecting different phase distributions
+
+$$
+\theta_n
+$$
+
+across the surface, energy can be focused toward specific users.
+
+This process is analogous to phased-array beamforming.
+
+RIS therefore acts as a programmable electromagnetic mirror.
+
+---
+
+#### 9. RIS Optimization Problem
+
+The general RIS optimization problem is
+
+$$
+\max_{\theta_n}
+\left|
+h_d+
+\sum_{n=1}^{N}
+g_n\theta_nf_n
+\right|^2
+$$
+
+subject to
+
+$$
+|\theta_n|=1
+$$
+
+The constraint arises because RIS elements mainly control phase rather than amplification.
+
+---
+
+#### 10. Practical Considerations
+
+The ideal model assumes:
+
+- Continuous phase control
+- Perfect channel knowledge
+- Lossless reflections
+
+Practical RIS hardware introduces:
+
+- Quantized phase shifts
+- Reflection losses
+- Mutual coupling
+- Channel estimation errors
+
+These effects reduce achievable gain.
+
+---
+
+#### Daily Outcome
+
+- Understood coherent combining.
+- Derived optimal RIS phase shifts.
+- Studied passive beamforming.
+- Derived RIS power scaling laws.
+- Explained the origin of the \(N^2\) gain.
+- Formulated RIS optimization problems.
+- Investigated practical hardware limitations.
+
+---
+
+### Day 20 (June 12, 2026): Spatial Channel Structure, Channel Estimation, and Future RIS Systems
+
+#### Objectives
+
+- Understand spatial channel structure.
+- Study array response vectors.
+- Investigate low-rank channel models.
+- Understand RIS channel estimation challenges.
+- Learn parameter reduction techniques.
+- Study RIS limitations.
+- Explore RIS applications in OTFS and 6G systems.
+
+---
+
+#### 1. Introduction
+
+Large RIS deployments may contain hundreds or thousands of reflecting elements.
+
+Estimating every channel coefficient individually becomes computationally expensive.
+
+Fortunately, wireless channels possess geometric and spatial structure that can be exploited.
+
+Understanding this structure is essential for practical RIS systems.
+
+---
+
+#### 2. Spatial Channel Structure
+
+Wireless propagation is not completely random.
+
+Signals often arrive from a small number of dominant directions.
+
+These dominant paths create spatial correlation across antenna arrays and RIS elements.
+
+Consequently, the channel can often be represented using a small number of parameters.
+
+---
+
+#### 3. Array Response Vectors
+
+Consider a Uniform Linear Array (ULA).
+
+The steering vector is
+
+$$
+a(\theta)
+=
+\begin{bmatrix}
+1\\
+e^{jkd\sin\theta}\\
+e^{j2kd\sin\theta}\\
+\vdots\\
+e^{j(M-1)kd\sin\theta}
+\end{bmatrix}
+$$
+
+where
+
+- $M$ = number of antennas
+- $d$ = antenna spacing
+- $k=\frac{2\pi}{\lambda}$
+
+This vector describes how a signal arriving from angle
+
+$$
+\theta
+$$
+
+appears across the array.
+
+---
+
+#### 4. Geometric Channel Representation
+
+Many wireless channels can be represented as
+
+$$
+H
+=
+\sum_{\ell=1}^{L}
+\alpha_\ell
+a_r(\theta_\ell)
+a_t^H(\phi_\ell)
+$$
+
+where
+
+- $L$ = number of dominant paths
+- $\alpha_\ell$ = path gain
+- $a_r$ = receive steering vector
+- $a_t$ = transmit steering vector
+
+---
+
+### 5. Low-Rank Channel Models
+
+Typically
+
+$$
+L \ll M,N
+$$
+
+where:
+
+- $M$ = transmitter antennas
+- $N$ = RIS elements
+
+The channel therefore possesses a low-rank structure.
+
+Instead of estimating thousands of coefficients, only a small number of physical parameters must be estimated.
+
+---
+
+#### 6. RIS Channel Estimation Challenge
+
+The RIS-assisted channel contains:
+
+- Direct channel
+- TX-RIS channel
+- RIS-RX channel
+
+For large RIS arrays, the number of unknown parameters becomes extremely large.
+
+For example:
+
+$$
+N=1000
+$$
+
+may require estimation of thousands of channel coefficients.
+
+This remains one of the largest challenges in RIS communication systems.
+
+---
+
+### 7. Parameter Reduction Techniques
+
+Several approaches exploit channel structure:
+
+##### Sparsity-Based Methods
+
+Only dominant paths are estimated.
+
+##### Geometric Models
+
+Angles and path gains are estimated instead of full matrices.
+
+##### Compressed Sensing
+
+Sparse recovery algorithms reduce pilot overhead.
+
+##### Low-Rank Approximation
+
+Channel matrices are represented using a small number of basis vectors.
+
+---
+
+#### 8. Practical RIS Limitations
+
+Despite its advantages, RIS technology faces several practical challenges.
+
+##### Reflection Losses
+
+Not all incident energy is reflected.
+
+##### Quantized Phase Control
+
+Many RIS elements provide only:
+
+- 1-bit control
+- 2-bit control
+- 3-bit control
+
+rather than continuous phase adjustment.
+
+##### Mutual Coupling
+
+Neighboring elements interact electromagnetically.
+
+##### Channel Estimation
+
+Accurate CSI acquisition remains difficult.
+
+---
+
+#### 9. RIS vs Massive MIMO
+
+##### Massive MIMO
+
+Advantages:
+
+- Active beamforming
+- High performance
+- Mature technology
+
+Disadvantages:
+
+- High power consumption
+- Expensive RF chains
+
+---
+
+##### RIS
+
+Advantages:
+
+- Passive operation
+- Low power consumption
+- Low hardware complexity
+
+Disadvantages:
+
+- Limited control capability
+- CSI acquisition challenges
+
+Future wireless systems may combine RIS and Massive MIMO.
+
+---
+
+#### 10. RIS and OTFS
+
+RIS technology is highly relevant for OTFS systems.
+
+OTFS operates in the Delay-Doppler domain and is designed for:
+
+- High mobility
+- Time-varying channels
+- Future 6G applications
+
+Potential combinations include:
+
+- RIS-assisted OTFS
+- High-speed railway communication
+- UAV communication
+- Vehicular communication
+- Satellite communication
+
+RIS can improve propagation conditions while OTFS improves robustness against mobility.
+
+---
+
+#### 11. RIS and 6G Networks
+
+Future applications include:
+
+- Smart radio environments
+- Intelligent wireless propagation
+- Joint communication and sensing
+- Holographic MIMO
+- AI-assisted RIS optimization
+- Energy-efficient communication systems
+
+The long-term vision is to transform the wireless environment into a programmable communication resource.
+
+---
+
+#### 12. Overall Lecture Summary
+
+The complete RIS signal-processing framework consists of:
+
+1. Wireless propagation physics.
+2. Signal and system modeling.
+3. RIS hardware fundamentals.
+4. End-to-end RIS channel models.
+5. Beamforming and coherent combining.
+6. Channel optimization.
+7. Spatial channel structure.
+8. Channel estimation.
+9. Future 6G applications.
+
+RIS transforms the communication environment from a passive obstacle into an active and controllable component of the wireless system.
+
+---
+
+#### Daily Outcome
+
+- Studied spatial channel structure.
+- Learned array response modeling.
+- Investigated low-rank channel representations.
+- Understood RIS channel estimation challenges.
+- Examined practical RIS limitations.
+- Compared RIS and Massive MIMO.
+- Explored RIS-assisted OTFS systems.
+- Completed the study of the RIS signal-processing lecture.
+
+---
