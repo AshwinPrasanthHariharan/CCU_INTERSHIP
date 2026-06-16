@@ -2872,11 +2872,7 @@ The interaction between an electromagnetic wave and an RIS element is characteri
 
 The reflection coefficient is given by
 
-$$
-\Gamma
-=
-\frac{Z(V)-Z_0}{Z(V)+Z_0}
-$$
+$$\Gamma = \frac{Z(V)-Z_0}{Z(V)+Z_0}$$
 
 where
 
@@ -3145,14 +3141,7 @@ This leads directly to RIS beamforming and optimization.
 The narrowband RIS communication model derived previously is
 
 $$
-y=
-\left(
-h_d
-+
-\sum_{n=1}^{N}
-g_n\theta_nf_n
-\right)x+n
-$$
+y= \left(h_d + \sum_{n=1}^{N} g_n\theta_nf_n \right)x + n $$
 
 where:
 
@@ -3178,8 +3167,7 @@ Without RIS control, reflected signals arrive with random phases.
 The received reflected field is
 
 $$
-\sum_{n=1}^{N}
-g_nf_n
+\sum_{n=1}^{N} g_nf_n
 $$
 
 Because phases are random:
@@ -3196,18 +3184,13 @@ As a result, much of the reflected energy is wasted.
 Each reflected contribution can be written as
 
 $$
-g_n f_n
-=
-|g_n f_n|
-e^{j\phi_n}
+g_n f_n = |g_n f_n|e^{j\phi_n}
 $$
 
 where
 
 $$
-\phi_n
-=
-\angle g_n + \angle f_n
+\phi_n = \angle g_n + \angle f_n
 $$
 
 represents the total propagation phase.
@@ -3221,9 +3204,7 @@ $$
 so that
 
 $$
-g_n\theta_nf_n
-=
-|g_n||f_n|
+g_n\theta_nf_n = |g_n||f_n|
 $$
 
 becomes purely real and positive.
@@ -3237,20 +3218,13 @@ All reflected components now arrive in phase.
 The optimal RIS phase shift is
 
 $$
-\theta_n
-=
-e^{-j(\angle g_n+\angle f_n)}
+\theta_n = e^{-j(\angle g_n+\angle f_n)}
 $$
 
 Substituting into the received signal model gives
 
 $$
-y=
-\left(
-h_d+
-\sum_{n=1}^{N}
-|g_n||f_n|
-\right)x+n
+y=\left(h_d + \sum_{n=1}^{N} |g_n||f_n|\right)x+n
 $$
 
 All reflected paths now contribute constructively.
@@ -3296,25 +3270,19 @@ units of signal amplitude.
 The total received amplitude becomes
 
 $$
-A_{total}
-=
-Na
+A_{total} = Na
 $$
 
 Consequently,
 
 $$
-P_r
-=
-|A_{total}|^2
+P_r = |A_{total}|^2
 $$
 
 giving
 
 $$
-P_r
-=
-N^2a^2
+P_r = N^2a^2
 $$
 
 Therefore
@@ -3334,7 +3302,7 @@ This result is known as the RIS quadratic power scaling law.
 Random phases:
 
 $$
-P_r\propto N
+P_r \propto N
 $$
 
 ##### RIS Reflection
@@ -3342,7 +3310,7 @@ $$
 Phase-aligned reflections:
 
 $$
-P_r\propto N^2
+P_r \propto N^2
 $$
 
 This quadratic scaling is one of the major theoretical motivations for large RIS deployments.
@@ -3372,12 +3340,7 @@ RIS therefore acts as a programmable electromagnetic mirror.
 The general RIS optimization problem is
 
 $$
-\max_{\theta_n}
-\left|
-h_d+
-\sum_{n=1}^{N}
-g_n\theta_nf_n
-\right|^2
+\max_{\theta_n} \left| h_d+ \sum_{n=1}^{N} g_n\theta_nf_n \right|^2
 $$
 
 subject to
@@ -3466,10 +3429,7 @@ Consider a Uniform Linear Array (ULA).
 The steering vector is
 
 $$
-a(\theta)
-=
-\begin{bmatrix}
-1\\
+a(\theta) = \begin{bmatrix} 1\\
 e^{jkd\sin\theta}\\
 e^{j2kd\sin\theta}\\
 \vdots\\
@@ -3498,12 +3458,7 @@ appears across the array.
 Many wireless channels can be represented as
 
 $$
-H
-=
-\sum_{\ell=1}^{L}
-\alpha_\ell
-a_r(\theta_\ell)
-a_t^H(\phi_\ell)
+H = \sum_{\ell=1}^{L} \alpha_\ell a_r(\theta_\ell) a_t^H(\phi_\ell)
 $$
 
 where
