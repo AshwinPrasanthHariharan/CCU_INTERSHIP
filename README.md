@@ -1035,7 +1035,7 @@ Each transmitted sample generates a shifted sinc pulse.
 The continuous waveform is obtained by summing all shifted sinc functions:
 
 $$
-x(t) = \sum_{n=-\infty}^{\infty} x[n] sinc \left( \frac{t-nT_s}{T_s\right)
+x(t) = \sum_{n=-\infty}^{\infty} x[n] sinc \left( \frac{t-nT_s}{T_s}\right)
 $$
 
 where $T_s$ is the sampling interval.
@@ -2594,12 +2594,7 @@ Since wireless channels transmit continuous-time waveforms, these discrete symbo
 
 Pulse Amplitude Modulation (PAM) performs this conversion:
 
-$$
-x(t)
-=
-\sum_m
-x[m]p\left(t-\frac{m}{B}\right)
-$$
+$$x(t) = \sum_m x[m]p\left(t-\frac{m}{B}\right)$$
 
 where:
 
