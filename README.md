@@ -1309,12 +1309,7 @@ Each path is characterized by:
 
 For path \(i\):
 
-$$
-r_i(t)
-=
-s(t-\tau_i)
-e^{j2\pi f_{D,i} t}
-$$
+$$r_i(t) = s(t-\tau_i) e^{j2\pi f_{D,i} t}$$
 
 where
 
@@ -1348,11 +1343,7 @@ Each path was delayed independently.
 
 The delay operation was implemented by shifting the waveform in time according to:
 
-$$
-\tau_i
-=
-\frac{d_i}{c}
-$$
+$$\tau_i = \frac{d_i}{c}$$
 
 where:
 
@@ -1367,9 +1358,7 @@ The delayed copies begin later in the observation window and represent reflected
 
 After delaying the signal, Doppler shifts were applied through complex phase rotation.
 
-$$
-e^{j2\pi f_{D,i}t}
-$$
+$$e^{j2\pi f_{D,i}t}$$
 
 Positive Doppler corresponds to approaching motion.
 
@@ -1641,13 +1630,7 @@ Each path contains:
 
 The RF representation of path $i$ can be expressed as
 
-$$
-r_i(t)
-=
-g_i
-s(t-\tau_i)
-e^{j2\pi f_{D,i}t}
-$$
+$$r_i(t)=g_is(t-\tau_i) e^{j2\pi f_{D,i}t}$$
 
 where:
 
@@ -1701,14 +1684,7 @@ Instead, all propagation paths arrive simultaneously and add together according 
 
 The received signal is therefore
 
-$$
-r(t)
-=
-\sum_{i=1}^{P}
-g_i
-s(t-\tau_i)
-e^{j2\pi f_{D,i}t}
-$$
+$$r(t) = \sum_{i=1}^{P} g_i s(t-\tau_i) e^{j2\pi f_{D,i}t}$$
 
 where:
 
@@ -1796,12 +1772,7 @@ To recover the transmitted information, the receiver performs quadrature downcon
 
 The received signal is multiplied by a locally generated carrier:
 
-$$
-r_{BB}(t)
-=
-r_{RF}(t)
-e^{-j2\pi f_c t}
-$$
+$$r_{BB}(t) = r_{RF}(t) e^{-j2\pi f_c t}$$
 
 This shifts the desired spectrum from the carrier frequency back to DC.
 
@@ -1828,17 +1799,13 @@ rx_complex_mixed = (
 
 The mixing operation generates two spectral components:
 
-$$
-f_c-f_c = 0
-$$
+$$f_c-f_c = 0$$
 
 and
 
-$$
-f_c+f_c = 2f_c
-$$
+$$f_c+f_c = 2f_c$$
 
-The component near \(2f_c\) contains no useful information and must be removed.
+The component near $2f_c$ contains no useful information and must be removed.
 
 A low-pass filter was therefore applied to isolate the baseband spectrum.
 
@@ -1948,16 +1915,7 @@ In reality, OTFS does not remove these impairments during transmission.
 
 The wireless channel still produces
 
-$$
-r(t)
-=
-\sum_{i=1}^{P}
-h_i
-s(t-\tau_i)
-e^{j2\pi \nu_i t}
-+
-n(t)
-$$
+$$r(t)=\sum_{i=1}^{P}h_i s(t-\tau_i) e^{j2\pi \nu_i t} + n(t)$$
 
 where:
 
@@ -2054,13 +2012,7 @@ The SFFT performs the inverse operation of the transmitter ISFFT.
 
 Mathematically,
 
-$$
-\hat{D}
-=
-W_M^{-1}
-X_{TF}
-W_N
-$$
+$$\hat{D} = W_M^{-1} X_{TF} W_N$$
 
 where:
 
@@ -2171,17 +2123,12 @@ For an ideal isotropic radiator, the transmitted power is distributed uniformly 
 
 The surface area of a sphere of radius $d$ is
 
-$$
-A_{sphere}=4\pi d^2
-$$
-
+$$A_{sphere}=4\pi d^2$$
 Since the same transmitted power is distributed over an increasingly larger area, the power density decreases with distance.
 
 The received power can be approximated by
 
-$$
-P_r=P_t\frac{A_e}{4\pi d^2}
-$$
+$$P_r=P_t\frac{A_e}{4\pi d^2}$$
 
 where:
 
@@ -2192,9 +2139,7 @@ where:
 
 This relationship demonstrates the inverse-square law:
 
-$$
-P_r\propto \frac{1}{d^2}
-$$
+$$P_r\propto \frac{1}{d^2}$$
 
 ---
 
@@ -2202,29 +2147,21 @@ $$
 
 For a carrier frequency of approximately 3 GHz:
 
-$$
-\lambda = 0.1;m
-$$
+$$\lambda = 0.1;m$$
 
 and an effective receiving area
 
-$$
-A_e=\left(\frac{\lambda}{4}\right)^2
-$$
+$$A_e=\left(\frac{\lambda}{4}\right)^2$$
 
 the received power fractions become:
 
 ###### At 1 m
 
-$$
-\frac{P_r}{P_t}\approx0.005%
-$$
+$$\frac{P_r}{P_t}\approx0.005%$$
 
 or approximately
 
-$$
--43;dB
-$$
+$$-43;dB$$
 
 ###### At 10 m
 
