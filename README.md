@@ -1027,9 +1027,7 @@ Therefore, the discrete samples must be reconstructed into a continuous signal b
 The ideal interpolation kernel is the sinc function:
 
 $$
-sinc(x)
-=
-\frac{\sin(\pi x)}{\pi x}
+sinc(x) = \frac{\sin(\pi x)}{\pi x}
 $$
 
 Each transmitted sample generates a shifted sinc pulse.
@@ -1037,10 +1035,10 @@ Each transmitted sample generates a shifted sinc pulse.
 The continuous waveform is obtained by summing all shifted sinc functions:
 
 $$
-x(t) = \sum_{n=-\infty}^{\infty} x[n] \operatorname{sinc} \left( \frac{t-nT_s}{T_s} \right)
+x(t) = \sum_{n=-\infty}^{\infty} x[n] \operatorname{sinc} \left( \frac{t-nT_s}{T_s\right)
 $$
 
-where \(T_s\) is the sampling interval.
+where $T_s$ is the sampling interval.
 
 ---
 
@@ -1049,9 +1047,7 @@ where \(T_s\) is the sampling interval.
 A key property of the sinc function is:
 
 $$
-\operatorname{sinc}(n)=0
-\qquad
-n \neq 0
+\operatorname{sinc}(n)=0 \qquad n \neq 0
 $$
 
 This means that every pulse reaches zero exactly at the sampling locations of neighboring symbols.
@@ -1118,10 +1114,7 @@ Instead, reflections from buildings, vehicles, terrain, and surrounding objects 
 The received signal can therefore be expressed as:
 
 $$
-r(t)
-=
-\sum_{i=0}^{L-1}
-h_i s(t-\tau_i)
+r(t) = \sum_{i=0}^{L-1} h_i s(t-\tau_i)
 $$
 
 where:
@@ -1143,18 +1136,13 @@ Instead of appending zeros, the final samples of the symbol are copied and place
 For a transmitted symbol:
 
 $$
-x[n]
-=
-[x_0,x_1,\dots,x_{N-1}]
+x[n] = [x_0,x_1,\dots,x_{N-1}]
 $$
 
 the Cyclic Prefix operation generates:
 
 $$
-x_{CP}[n]
-=
-[x_{N-N_{CP}},\dots,x_{N-1},
-x_0,x_1,\dots,x_{N-1}]
+x_{CP}[n] = [x_{N-N_{CP}},\dots,x_{N-1}, x_0,x_1,\dots,x_{N-1}]
 $$
 
 where $N_{CP}$ denotes the cyclic prefix length.
@@ -1176,9 +1164,7 @@ This property is extremely important because FFT-based communication systems rel
 Without a Cyclic Prefix:
 
 $$
-y[n]
-=
-h[n] * x[n]
+y[n] = h[n] * x[n]
 $$
 
 where \(*\) denotes linear convolution.
@@ -1186,14 +1172,10 @@ where \(*\) denotes linear convolution.
 With a sufficiently long Cyclic Prefix:
 
 $$
-y[n]
-=
-h[n]
-\circledast
-x[n]
+y[n] = h[n] \circledast x[n]
 $$
 
-where \(\circledast\) denotes circular convolution.
+where $ \circledast\ $ denotes circular convolution.
 
 This allows the channel effects to be handled efficiently in the frequency domain.
 
