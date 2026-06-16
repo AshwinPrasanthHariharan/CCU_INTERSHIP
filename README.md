@@ -1035,7 +1035,7 @@ Each transmitted sample generates a shifted sinc pulse.
 The continuous waveform is obtained by summing all shifted sinc functions:
 
 $$
-x(t) = \sum_{n=-\infty}^{\infty} x[n] \operatorname{sinc} \left( \frac{t-nT_s}{T_s\right)
+x(t) = \sum_{n=-\infty}^{\infty} x[n] sinc \left( \frac{t-nT_s}{T_s\right)
 $$
 
 where $T_s$ is the sampling interval.
@@ -1047,7 +1047,7 @@ where $T_s$ is the sampling interval.
 A key property of the sinc function is:
 
 $$
-\operatorname{sinc}(n)=0 \qquad n \neq 0
+\sinc(n)=0 \qquad n \neq 0
 $$
 
 This means that every pulse reaches zero exactly at the sampling locations of neighboring symbols.
@@ -1568,7 +1568,9 @@ doppler_paths = apply_doppler(
 ```
 
 These generated paths represent the individual delay-Doppler components of the wireless channel and form the basis for the RF multipath synthesis performed in the following day.
+
 ---
+
 ##### Simulation Results
 
 The generated channel paths are shown below.
