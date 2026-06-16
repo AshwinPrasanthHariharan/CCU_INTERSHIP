@@ -96,7 +96,9 @@ $$
 $$
 
 When the transmitter calculates $\mathbf{W}_M \cdot \mathbf{D}$, it streams each column vector $\mathbf{d}_n$ through a single, pipelined 1-D FFT/IFFT core sequentially, storing the intermediate outputs in a RAM buffer to flip the matrix rows sideways for the next stage.
+
 ---
+
 ### **Day 2 (May 19): Foundational Understanding of The Algorithm**
 
 #### **Objectives**
@@ -888,13 +890,7 @@ Therefore, the signal must be translated to a higher carrier frequency $f_c$ bef
 
 The RF waveform is generated using the In-Phase and Quadrature components:
 
-$$
-s_{RF}(t)
-=
-I(t)\cos(2\pi f_c t)
--
-Q(t)\sin(2\pi f_c t)
-$$
+$$s_{RF}(t) =I(t)\cos(2\pi f_c t) - Q(t)\sin(2\pi f_c t)$$
 
 where:
 
@@ -1018,9 +1014,7 @@ Although OTFS processing relies heavily on complex arithmetic, the antenna ultim
 
 The Heisenberg transform produces a sequence of discrete-time samples:
 
-$$
-x[0], x[1], x[2], \dots, x[N-1]
-$$
+$$x[0], x[1], x[2], \dots, x[N-1]$$
 
 However, a real communication channel requires a continuously varying voltage waveform.
 
@@ -1033,7 +1027,7 @@ Therefore, the discrete samples must be reconstructed into a continuous signal b
 The ideal interpolation kernel is the sinc function:
 
 $$
-\operatorname{sinc}(x)
+sinc(x)
 =
 \frac{\sin(\pi x)}{\pi x}
 $$
@@ -1043,14 +1037,7 @@ Each transmitted sample generates a shifted sinc pulse.
 The continuous waveform is obtained by summing all shifted sinc functions:
 
 $$
-x(t)
-=
-\sum_{n=-\infty}^{\infty}
-x[n]
-\operatorname{sinc}
-\left(
-\frac{t-nT_s}{T_s}
-\right)
+x(t) = \sum_{n=-\infty}^{\infty} x[n] \operatorname{sinc} \left( \frac{t-nT_s}{T_s} \right)
 $$
 
 where \(T_s\) is the sampling interval.
