@@ -3470,7 +3470,7 @@ where
 
 ---
 
-### 5. Low-Rank Channel Models
+#### 5. Low-Rank Channel Models
 
 Typically
 
@@ -3511,7 +3511,7 @@ This remains one of the largest challenges in RIS communication systems.
 
 ---
 
-### 7. Parameter Reduction Techniques
+#### 7. Parameter Reduction Techniques
 
 Several approaches exploit channel structure:
 
@@ -3662,3 +3662,585 @@ RIS transforms the communication environment from a passive obstacle into an act
 - Completed the study of the RIS signal-processing lecture.
 
 ---
+
+### Day 21-22 (June 15-16, 2026): End-to-End OTFS Receiver Reconstruction, Equalization & BER Validation
+
+#### Objectives
+
+1. Implement the complete OTFS receiver chain and reconstruct the transmitted Delay-Doppler frame.
+2. Recover discrete-time samples from the received continuous-time waveform.
+3. Remove the Cyclic Prefix and rebuild the original OTFS frame structure.
+4. Perform reverse Heisenberg and Symplectic Fourier processing to obtain the received Delay-Doppler grid.
+5. Implement and compare Zero-Forcing (ZF) and Minimum Mean Square Error (MMSE) equalizers.
+6. Evaluate receiver performance using constellation analysis and Bit Error Rate (BER) computation.
+7. Establish a complete end-to-end floating-point reference model prior to RTL migration.
+
+---
+
+#### 1. Motivation
+
+Previous stages modeled the OTFS transmitter, RF upconversion, multipath and Doppler channel effects, and receiver downconversion. The waveform at this point still contains delay spread, Doppler spread, fading, phase distortion, and amplitude attenuation. The receiver stage below reconstructs the transmitted Delay-Doppler symbols, compensates for the channel, and measures end-to-end performance.
+
+---
+
+#### 2. Receiver Reconstruction
+
+After quadrature downconversion and low-pass filtering, the received waveform is interpolated back onto the original transmit timeline. The notebook uses a linear interpolator for both I and Q branches so the recovered complex baseband stream can be sampled at the original symbol boundaries.
+
+```python
+from scipy.interpolate import interp1d
+import numpy as np
+
+# Reconstruct complex baseband
+rx_complex = rx_I + 1j * rx_Q
+
+# Interpolate the received waveform back onto the original timeline
+interp_real = interp1d(
+    t_extended,
+    np.real(rx_complex),
+    bounds_error=False,
+    fill_value=0.0,
+)
+
+interp_imag = interp1d(
+    t_extended,
+    np.imag(rx_complex),
+    bounds_error=False,
+    fill_value=0.0,
+)
+
+symbol_times = np.linspace(
+    t_seconds_cp[0],
+    t_seconds_cp[-1],
+    len(tx_with_cp),
+)
+
+rx_resampled = (
+    interp_real(symbol_times)
+    + 1j * interp_imag(symbol_times)
+)
+```
+
+The reconstructed discrete-time signal is represented as
+
+$$
+r[n] = r_I[n] + j r_Q[n]
+$$
+
+---
+
+#### 3. Cyclic Prefix Removal
+
+Each OTFS symbol contains a cyclic prefix inserted before transmission. The receiver removes those guard samples to recover the original useful payload region.
+
+```python
+payload_slots = []
+
+slot_length = samples_per_slot + N_CP
+
+for n in range(N):
+
+    start = n * slot_length
+    stop = start + slot_length
+
+    slot = rx_resampled[start:stop]
+
+    payload = slot[N_CP:]
+
+    payload_slots.append(payload)
+
+rx_payload = np.concatenate(payload_slots)
+```
+
+---
+
+#### 4. Reconstruction of Time-Domain OTFS Symbols
+
+After CP removal, the payload is reshaped back into the original OTFS frame layout.
+
+```python
+rx_time_domain_slots = rx_payload.reshape(
+    M,
+    N,
+    order='F'
+)
+```
+
+---
+
+#### 5. Reverse Heisenberg Processing
+
+The receiver applies an FFT to each recovered time slot to reconstruct the received Time-Frequency grid.
+
+```python
+X_TF_rx = np.zeros(
+    (M, N),
+    dtype=complex,
+)
+
+for n in range(N):
+
+    X_TF_rx[:, n] = (
+        np.fft.fft(
+            rx_time_domain_slots[:, n]
+        ) / np.sqrt(M)
+    )
+```
+
+Mathematically,
+
+$$
+X_{TF}^{rx} = \text{FFT}\{r[n]\}
+$$
+
+---
+
+#### 6. Symplectic Finite Fourier Transform (SFFT)
+
+The receiver performs the inverse operation of the transmitter ISFFT to recover the Delay-Doppler grid.
+
+```python
+W_M_inv = (
+    1 / np.sqrt(M)
+) * np.fft.ifft(np.eye(M)) * M
+
+W_N = (
+    1 / np.sqrt(N)
+) * np.fft.fft(np.eye(N))
+
+D_hat = (
+    W_M_inv @
+    X_TF_rx @
+    W_N
+)
+```
+
+The resulting matrix $\hat{D}$ represents the recovered Delay-Doppler symbols.
+
+---
+
+#### Simulation Results
+
+The comparison below shows the original transmitted Delay-Doppler symbols and the recovered symbols obtained after receiver-side reconstruction.
+
+<div align="center">
+
+<img src="./assets/fig15.png" width="850"/>
+
+**Figure 21.1:** Comparison between the original transmitted Delay-Doppler symbols and the recovered Delay-Doppler symbols obtained after receiver-side reconstruction. The recovered constellation exhibits spreading and displacement due to multipath propagation, Doppler shifts, fading, and channel-induced phase distortion. Despite these impairments, the receiver reconstructs the symbols near their original constellation locations, validating the OTFS demodulation pipeline.
+
+</div>
+
+---
+
+#### 7. Channel Estimation & Equalization
+
+A simple channel estimate is obtained by comparing the recovered symbols with the transmitted symbols. This is an idealized experiment, but it provides a useful floating-point reference for equalizer behavior.
+
+```python
+epsilon = 1e-6
+
+H_est = D_hat / (D + epsilon)
+```
+
+##### Zero-Forcing Equalization
+
+The Zero-Forcing equalizer directly inverts the channel estimate.
+
+```python
+D_zf = D_hat / (H_est + epsilon)
+```
+
+##### MMSE Equalization
+
+To improve robustness against fading and noise, the MMSE equalizer balances channel inversion against noise amplification.
+
+```python
+noise_variance = 0.01
+
+W_mmse = (
+    np.conj(H_est) /
+    (
+        np.abs(H_est)**2 +
+        noise_variance
+    )
+)
+
+D_mmse = (
+    W_mmse * D_hat
+)
+```
+
+---
+
+#### 8. Recovery Error Analysis
+
+The notebook evaluates each equalizer using mean absolute recovery error.
+
+```python
+raw_error = np.mean(np.abs(D_hat - D))
+zf_error = np.mean(np.abs(D_zf - D))
+mmse_error = np.mean(np.abs(D_mmse - D))
+
+print(f"Raw Recovery Error  : {raw_error:.4f}")
+print(f"ZF Recovery Error   : {zf_error:.4f}")
+print(f"MMSE Recovery Error : {mmse_error:.4f}")
+```
+
+For the current toy channel setup, the notebook reports a raw recovery error of about 1.2539, ZF error near zero, and MMSE error around 0.0353.
+
+---
+
+#### 9. Bitstream Recovery & BER Computation
+
+After equalization, the MMSE output is demapped back to binary data. The nearest-neighbor demapper below matches the logic used in the notebook and keeps the BER calculation explicit.
+
+```python
+def qam16_demapper(symbols):
+    levels = np.array([-3, -1, 1, 3])
+    inverse_gray_lut = {v: k for k, v in gray_lut.items()}
+    recovered_bits = []
+
+    for symbol in np.asarray(symbols).flatten():
+        i_level = levels[np.argmin(np.abs(levels - symbol.real))]
+        q_level = levels[np.argmin(np.abs(levels - symbol.imag))]
+        recovered_bits.extend(inverse_gray_lut[i_level])
+        recovered_bits.extend(inverse_gray_lut[q_level])
+
+    return np.array(recovered_bits, dtype=int)
+
+detected_symbols = D_mmse.flatten()
+recovered_bits = qam16_demapper(detected_symbols)
+
+bit_errors = np.sum(recovered_bits != raw_bitstream)
+ber = bit_errors / len(raw_bitstream)
+
+print(f"Bit Errors : {bit_errors}")
+print(f"BER        : {ber:.6f}")
+```
+
+The bit error rate is computed as
+
+$$
+BER = \frac{\text{Number of Bit Errors}}{\text{Total Number of Transmitted Bits}}
+$$
+
+---
+
+#### Simulation Results
+
+The recovery comparison below shows the original transmitted symbols, the raw recovered symbols, the ZF output, and the MMSE output.
+
+<div align="center">
+
+<img src="./assets/fig16.png" width="850"/>
+
+**Figure 22.1:** OTFS symbol recovery performance comparison showing the original transmitted symbols, raw recovered symbols, Zero-Forcing (ZF) equalized symbols, and Minimum Mean Square Error (MMSE) equalized symbols. The raw constellation is severely distorted by channel impairments. Both equalization methods improve symbol recovery, with MMSE providing the closest clustering around the ideal 16-QAM points in this floating-point reference model.
+
+</div>
+
+##### Observations
+
+- The raw recovered constellation exhibits significant distortion due to multipath fading, delay spread, and Doppler effects introduced by the wireless channel.
+- Zero-Forcing equalization compensates for most channel distortions but remains sensitive to deep fades and noise amplification.
+- MMSE equalization provides better robustness by balancing channel inversion with noise suppression.
+- The MMSE-equalized symbols cluster more tightly around the ideal 16-QAM constellation points.
+- The BER calculation completes the end-to-end floating-point OTFS transceiver reference model.
+
+---
+
+#### Key Understanding
+
+The OTFS receiver is responsible for reconstructing, equalizing, and decoding a severely distorted wireless waveform. By implementing receiver reconstruction, equalization, constellation analysis, and BER evaluation, the notebook now represents a complete end-to-end floating-point OTFS transceiver model suitable for future fixed-point optimization and FPGA migration.
+
+---
+
+### Day 23-24 (June 17-18, 2026): Reconfigurable Surfaces & Massive MIMO
+
+#### Objectives
+
+1. Consolidate the propagation and beamforming ideas that motivate large-array wireless systems.
+2. Connect classical beamforming, Massive MIMO, RIS, and holographic arrays into one design narrative.
+3. Highlight the hardware and channel-structure limits that make current deployments fall short of the ideal theory.
+4. Record the open research problems that still need to be solved before truly programmable propagation becomes practical.
+
+---
+
+#### 1. Why Beamforming Still Matters
+
+Wireless links lose most of their power to geometric spreading. The received signal level drops quickly with distance, so small improvements in radiation directivity can create large practical gains. The key link-budget ideas are:
+
+$$
+P_{\text{rx}} \propto \frac{1}{r^2}
+$$
+
+and, using the antenna aperture relation,
+
+$$
+G = \frac{4\pi A_e}{\lambda^2}
+$$
+
+These two facts explain why beamforming, array gain, and aperture size dominate modern wireless design.
+
+---
+
+#### 2. From Early Beamforming to Massive MIMO
+
+The historical path is useful because it shows how the field moved from fixed-direction antennas to flexible spatial multiplexing.
+
+| Era | Main Idea | Practical Limitation |
+|---|---|---|
+| 1920s beamforming | Electrically steer energy toward a target | Limited control and crude array layouts |
+| SDMA / early MU-MIMO | Serve multiple users spatially | Mostly engineering-driven, not fully theory-driven |
+| Single-user MIMO | Send multiple layers to one user | Needs good channel knowledge and stable propagation |
+| Massive MIMO | Use many antennas for array gain and multiplexing | Pilot contamination, correlation, and hardware cost |
+
+The important lesson is that performance depends not only on the number of antennas, but also on the geometry of the array and the angular structure of the channel.
+
+---
+
+#### 3. Why Practical Massive MIMO Differs from the Ideal Model
+
+Ideal analyses often assume IID Rayleigh fading, but real deployments are spatially correlated. In practice:
+
+- Users are often separable in azimuth more than in elevation.
+- Planar arrays may underperform long horizontal arrays in some urban layouts.
+- Pilot reuse creates contamination that limits simple beamforming gains.
+
+This is why interference cancellation and user geometry matter as much as raw antenna count.
+
+---
+
+#### 3.1 Fading, Interference, and Controlled Multipath
+
+RIS becomes useful when the channel is not stable. In real deployments, fading arises because multiple propagation paths add with different amplitudes and phases. The received field can be modeled as a sum of path contributions, so the envelope may change from strong constructive addition to deep destructive cancellation.
+
+For many rich-scattering environments, the effective channel gain is often approximated as Rayleigh distributed. That means the system spends a lot of time near average performance, but deep fades still occur often enough to matter for fixed IIoT devices and other stationary endpoints.
+
+RIS changes this by controlling one or more reflected paths. Instead of letting all multipath components interfere randomly, the surface applies a tunable phase shift so that the desired path aligns constructively at the receiver:
+
+$$
+\\theta_n = e^{-j(\\angle f_n + \\angle g_n)}
+$$
+
+This converts random fading into a partially engineered channel. The practical benefit is not only higher average power, but also reduced variability in the received SNR.
+
+When the number of controlled elements becomes large, the channel hardens: the received power becomes more predictable and the relative effect of small random fluctuations drops. In the experimental measurements summarized in the lecture, this phase control produced up to a 27 dB improvement over a passive copper plate reflector.
+
+The key takeaway is that RIS is most valuable in exactly the situations where fading hurts the most: blocked links, weak direct paths, and fixed devices that cannot move to a better location.
+
+---
+
+#### 4. Reconfigurable Intelligent Surfaces
+
+RIS shifts the design problem from active transmission alone to environment control. Instead of generating a new waveform, the surface reshapes an incident one by adjusting its element impedance.
+
+The reflection coefficient is modeled as
+
+$$
+\Gamma = \frac{Z(V) - Z_0}{Z(V) + Z_0}
+$$
+
+where the bias voltage controls the element impedance and therefore its phase response.
+
+The practical design rules are:
+
+- Use sub-wavelength elements so the surface response is controlled by interference across the array rather than by each element's own directivity.
+- Prefer low-power, programmable impedance control over active RF chains when the goal is coverage shaping instead of signal regeneration.
+- Treat RIS as a controllable propagation object, not as a conventional antenna.
+
+---
+
+#### 5. Holographic Massive MIMO and Near-Field Focusing
+
+Holographic Massive MIMO extends the active-array concept to very large apertures. Once the aperture becomes large enough, the far-field approximation breaks down and the wavefront curvature matters.
+
+The Fraunhofer distance is
+
+$$
+r_F = \frac{2D^2}{\lambda}
+$$
+
+where $D$ is the aperture size. When the user is inside or near this region, the array must focus spherical wavefronts rather than just apply a planar steering phase.
+
+This leads to two important observations:
+
+- Large apertures can create tighter spatial focusing than conventional arrays.
+- Near-field processing becomes an algorithmic as well as a hardware problem.
+
+---
+
+#### 6. Open Research Problems
+
+The lecture emphasizes that the main unsolved issues are now systems problems, not just physics problems.
+
+| Problem | Why It Matters |
+|---|---|
+| CSI acquisition | Large arrays and RIS surfaces need accurate channel knowledge |
+| Quantized control | Real hardware often has only a few phase states |
+| Mutual coupling | Nearby elements affect each other electromagnetically |
+| Power and cost | Active arrays scale performance, but also cost and energy |
+| Deployment strategy | The best geometry depends on the environment and user distribution |
+
+---
+
+#### Key Understanding
+
+The next generation of wireless systems will not rely only on stronger transmitters. It will rely on controlling the spatial structure of the channel itself through larger apertures, better array geometry, and programmable surfaces. Massive MIMO, RIS, and holographic arrays are different points on the same design spectrum.
+
+#### Daily Outcome
+
+- Connected classical beamforming with modern array-based wireless systems.
+- Summarized the shift from early beam steering to Massive MIMO.
+- Recorded why real channel correlation changes performance outcomes.
+- Captured the physical and architectural basis of RIS.
+- Added the near-field perspective needed for holographic arrays.
+- Listed the main open problems that still block large-scale deployment.
+
+---
+
+### Narrowband and Wideband RIS Addendum
+
+This short addendum records the most important RIS points for both narrowband and wideband systems without repeating earlier sections.
+
+#### 0. Narrowband RIS Essentials
+
+In the narrowband case, one complex coefficient per link is usually enough to model the channel at the carrier.
+
+- Let $h_n$ denote transmitter-to-element channel and $g_n$ denote element-to-receiver channel.
+- Let the RIS apply phase shift $\theta_n$ at each element.
+- The cascaded channel term is built from $g_n h_n$.
+
+The effective reflected channel can be written as a coherent sum:
+
+$$
+h_{\text{eff}} = \sum_{n=1}^{N} g_n h_n e^{-j\theta_n}
+$$
+
+To maximize received SNR, choose each phase shift to align all terms in phase:
+
+$$
+theta_n^* = \angle(g_n h_n)
+$$
+
+With this alignment, the signal adds constructively and the reflected-link gain follows the familiar scaling trend:
+
+$$
+\mathrm{SNR}_{\max} \propto \left(\sum_{n=1}^{N} |g_n h_n|\right)^2
+$$
+
+This narrowband result is the clean theoretical baseline. The wideband sections below explain why practical OFDM systems cannot realize this optimum independently on every subcarrier.
+
+#### 1. Narrowband vs. Wideband
+
+In narrowband analysis, the RIS can be summarized by one cascaded channel term. In wideband OFDM systems, that simplification breaks down because each subcarrier sees a different delay-dependent superposition of paths.
+
+- Narrowband: one phase configuration is usually enough to evaluate the link.
+- Wideband: the same RIS phase vector must serve all subcarriers.
+- Consequence: a phase choice that is optimal on one subcarrier may be poor on another.
+
+#### 2. Why LOS to the Surface Matters
+
+The strongest wideband gains appear when the transmitter-to-RIS and RIS-to-receiver links are both LOS-dominated.
+
+- LOS to/from RIS gives a single dominant tap and weak frequency selectivity.
+- NLOS to/from RIS creates many comparable taps and a much harder optimization problem.
+- If the RIS cannot lock onto a dominant tap, the benefit can collapse across the band.
+
+#### 3. Strongest-Path Maximization
+
+Because a single RIS phase pattern must work for all subcarriers, a practical heuristic is to strengthen the dominant time-domain tap rather than chase per-subcarrier optimality.
+
+$$
+m^* = \arg\max_m \|\mathbf{v}_m\|_1^2
+$$
+
+The chosen phase profile is aligned to the strongest tap so that its energy spreads favorably across the OFDM band after the DFT.
+
+#### 4. Channel Estimation and Sparsity
+
+Wideband RIS estimation is easier when the channel has structure.
+
+- Codebook-based pilot sounding is a practical way to probe the surface.
+- If the channel is LOS-dominant, only a few angular parameters may be needed.
+- Blind full-matrix estimation becomes expensive quickly, so sparse or geometric models are preferred.
+
+#### 5. Quantized Phase Control
+
+The videos emphasize that discrete phase states are realistic and often sufficient.
+
+- Binary or 2-bit control already captures a large portion of the ideal beamforming gain.
+- Finer quantization reduces mismatch loss, but the main design question is still channel structure, not perfect continuous control.
+
+#### 6. EMI and Deployment Risk
+
+RIS does not only reflect the desired signal; it also reflects interference.
+
+- Desired signal can scale with aperture and coherent combining.
+- EMI can also collect aperture gain, so the net result is not always positive.
+- In interference-rich environments, a too-small or poorly placed RIS can reduce SNR instead of improving it.
+
+#### 7. Practical Rule of Thumb
+
+The best wideband deployment case is a weak direct link with LOS to and from the RIS. In that regime, the surface improves coverage, the frequency selectivity stays manageable, and the estimation problem remains tractable.
+
+#### Key Understanding
+
+Wideband RIS design is less about finding one perfect phase shift and more about finding a robust phase pattern that works across the entire band. That is why LOS structure, dominant-tap alignment, and realistic interference modeling matter more than ideal narrowband intuition.
+
+---
+
+### Day 25 (June 19, 2026): RIS Use Cases for 6G and mmWave Deployment
+
+#### Objectives
+
+1. Record the most practical 6G RIS deployment scenarios from the use-case lecture.
+2. Capture the mmWave design rules that make RIS useful at high frequency.
+3. Summarize the operational constraints that separate useful deployments from weak ones.
+
+---
+
+#### 1. 6G Frequency Context
+
+The upper mid-band is the most relevant new 6G space for RIS-style deployment, especially around the candidate band near 7.8 GHz. The central limitation is still the same: the RIS applies one phase pattern across the whole band, so it helps most when the channel is close to frequency-flat and the transmitter-RIS-receiver geometry is favorable.
+
+#### 2. High-Value Use Cases
+
+| Use Case | Main Benefit | Key Requirement |
+|---|---|---|
+| Fixed wireless access | Boost fixed users with known geometry | Bidirectional LoS to the surface |
+| Cell-wide capacity improvement | Modest but consistent gain across the cell | Keep the direct/static path alive |
+| Targeted regional enhancement | Strongest practical gain | Guaranteed LoS to the served region |
+| Cell-edge reliability | Better coverage probability for weak users | Static path plus RIS path together |
+
+The main lesson is that RIS works best as an add-on to a useful static path, not as a replacement for it.
+
+#### 3. Why the Gains Are Real but Limited
+
+The strongest results come from carefully placed surfaces that create a virtual line-of-sight path. If the surface sees the transmitter but not the receiver, or vice versa, the gain drops sharply. If the direct link is already strong, the RIS often adds only modest improvement.
+
+#### 4. mmWave Deployment Rules
+
+At mmWave, small apertures already produce narrow beams, so RIS placement becomes a geometry problem.
+
+- Place the surface where both transmitter and receiver can see it.
+- Prefer weak direct links and strong reflected links.
+- Use many small elements so the surface behaves like a controllable aperture rather than a mirror.
+- Expect near-field effects when the surface is large relative to link distance.
+- Treat phase quantization as a design constraint, not an exception.
+
+#### 5. Practical Design Checklist
+
+The deployment case is strongest when all of the following hold:
+
+- The direct path is weak or blocked.
+- The RIS has LoS to both ends of the link.
+- The channel does not vary too rapidly across frequency.
+- The surface is large enough to dominate interference and path loss.
+- The system can estimate the dominant path with a small pilot budget.
+
+#### Key Understanding
+
+For 6G and mmWave, RIS is most convincing when it creates a controlled virtual path for a specific region or user class. The technology is useful, but only when the geometry, bandwidth, and path structure all support a dominant reflected link.
+
+
