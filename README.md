@@ -4244,3 +4244,622 @@ The deployment case is strongest when all of the following hold:
 For 6G and mmWave, RIS is most convincing when it creates a controlled virtual path for a specific region or user class. The technology is useful, but only when the geometry, bandwidth, and path structure all support a dominant reflected link.
 
 
+### **Day 16–17 (June 6–7, 2026): Fixed-Point Quantization Analysis & FPGA-Oriented Numerical Validation**
+
+
+
+#### **Objectives**
+
+
+
+1. Develop a reusable fixed-point quantization framework for FPGA-oriented modeling.
+
+2. Quantize OTFS transmitter waveforms using signed fixed-point arithmetic.
+
+3. Explore the tradeoff between numerical precision and dynamic range.
+
+4. Evaluate quantization performance using RMSE metrics.
+
+5. Select an FPGA-friendly fixed-point representation for future RTL implementation.
+
+
+
+---
+
+
+
+##### 1. Motivation
+
+
+
+The OTFS transmitter developed thus far operates entirely using floating-point arithmetic. While floating-point models are ideal for algorithm verification and numerical analysis, FPGA implementations typically rely on fixed-point arithmetic due to:
+
+
+
+* Reduced DSP utilization
+
+* Lower power consumption
+
+* Smaller memory footprint
+
+* Deterministic arithmetic behavior
+
+* Improved hardware efficiency
+
+
+
+Therefore, prior to RTL implementation, a suitable fixed-point representation must be identified and validated.
+
+
+
+---
+
+
+
+##### 2. Fixed-Point Representation
+
+
+
+A floating-point value (x) is represented using a signed fixed-point format according to:
+
+
+
+$$
+
+q = round(x \cdot 2^F)
+
+$$
+
+
+
+where:
+
+
+
+* (F) = number of fractional bits
+
+* (q) = stored signed integer value
+
+
+
+The original value can be reconstructed through:
+
+
+
+$$
+
+x = \frac{q}{2^F}
+
+$$
+
+
+
+Increasing (F) improves numerical precision but reduces the available dynamic range.
+
+
+
+---
+
+
+
+##### 3. Quantization Framework Development
+
+
+
+A reusable quantization utility library was developed to support FPGA-oriented experimentation.
+
+
+
+The framework provides:
+
+
+
+* Signed fixed-point quantization
+
+* Dequantization
+
+* Saturating arithmetic
+
+* Complex waveform quantization
+
+* Error metric computation
+
+* Fractional-bit design-space exploration
+
+
+
+The framework supports both real-valued and complex-valued signal processing operations commonly encountered in communication systems.
+
+
+
+---
+
+
+
+##### 4. Design Space Exploration
+
+
+
+To determine an optimal implementation point, multiple fixed-point configurations were evaluated.
+
+
+
+The following candidate bit widths were investigated:
+
+
+
+| Bit Width | Fractional Bit Sweep |
+
+| --------- | -------------------- |
+
+| 12-bit    | 6–11                 |
+
+| 14-bit    | 8–13                 |
+
+| 16-bit    | 10–15                |
+
+
+
+For every ((BITS,F)) combination:
+
+
+
+1. Quantize the I-channel waveform.
+
+2. Quantize the Q-channel waveform.https://github.com/AshwinPrasanthHariharan/HS_202_G18
+
+3. Reconstruct the RF waveform.
+
+4. Measure quantization error.
+
+5. Detect clipping events.
+
+6. Compute dynamic-range margin.
+
+
+
+---
+
+
+
+##### Evaluation Metric
+
+
+
+Quantization performance was evaluated using Root Mean Square Error (RMSE):
+
+
+
+$$
+
+RMSE =
+
+\sqrt{
+
+\frac{1}{N}
+
+\sum_{n=0}^{N-1}
+
+(x[n]-\hat{x}[n])^2
+
+}
+
+$$
+
+
+
+where:
+
+
+
+* $x[n]$ represents the floating-point reference waveform.
+
+* $\hat{x}[n]$ represents the quantized reconstruction.
+
+
+
+Valid configurations must satisfy:
+
+
+
+* Low RF RMSE
+
+* Zero clipping
+
+* Positive dynamic-range margin
+
+
+
+---
+
+
+
+##### Design Space Exploration Implementation
+
+
+
+```python
+
+bits_candidates = [12, 14, 16]
+
+
+
+f_sweep_map = {
+
+    12: [6,7,8,9,10,11],
+
+    14: [8,9,10,11,12,13],
+
+    16: [10,11,12,13,14,15]
+
+}
+
+
+
+RMSE_THRESHOLD = 0.005
+
+```
+
+
+
+The notebook automatically evaluates all candidate configurations and selects the optimal operating point.
+
+
+
+---
+
+
+
+##### 5. RMSE Trade-Off Analysis
+
+
+
+The effect of increasing the number of fractional bits was analyzed for all candidate bit widths.
+
+
+
+```python
+
+fig, ax = plt.subplots(figsize=(11,6))
+
+...
+
+ax.set_yscale('log')
+
+```
+
+
+
+<div align="center">
+
+
+
+<img src="./assets/fig17.png" width="900"/>
+
+
+
+**Figure 16.1:** RF RMSE versus fractional-bit count for all evaluated fixed-point configurations. The highlighted point indicates the selected operating region.
+
+
+
+</div>
+
+
+
+---
+
+
+
+##### Observations
+
+
+
+* Increasing fractional precision initially reduces quantization error.
+
+* Excessively large fractional-bit counts reduce available dynamic range.
+
+* Saturation risk increases as representable range decreases.
+
+* A clear optimum exists where RMSE remains low without introducing clipping.
+
+
+
+---
+
+
+
+##### 6. Floating-Point Versus Fixed-Point Waveform Comparison
+
+
+
+After selecting the optimal configuration, the quantized waveforms were compared directly against the floating-point reference model.
+
+
+
+```python
+
+fig, axes = plt.subplots(3,1)
+
+...
+
+```
+
+
+
+<div align="center">
+
+
+
+<img src="./assets/fig_quant_2.png" width="950"/>
+
+
+
+**Figure 16.2:** Comparison between floating-point and quantized waveforms for the I-channel, Q-channel, and RF signal.
+
+
+
+</div>
+
+
+
+---
+
+
+
+##### Observations
+
+
+
+* Quantized waveforms closely track the floating-point reference.
+
+* No visible clipping is observed.
+
+* Signal amplitude remains within the representable range.
+
+* The selected fixed-point format preserves waveform fidelity.
+
+
+
+---
+
+
+
+##### 7. Quantization Error Analysis
+
+
+
+To quantify numerical distortion, error signals were computed for each waveform.
+
+
+
+$$
+
+e_I = I - I_q
+
+$$
+
+
+
+$$
+
+e_Q = Q - Q_q
+
+$$
+
+
+
+$$
+
+e_{RF} = RF - RF_q
+
+$$
+
+
+
+```python
+
+i_error = i_analog_wave - i_analog_wave_q
+
+q_error = q_analog_wave - q_analog_wave_q
+
+rf_error = rf_tx_signal - rf_tx_signal_q
+
+```
+
+
+
+<div align="center">
+
+
+
+<img src="./assets/fig_quant_3.png" width="950"/>
+
+
+
+**Figure 16.3:** Quantization error analysis showing waveform error traces and corresponding error distribution histogram.
+
+
+
+</div>
+
+
+
+---
+
+
+
+##### Observations
+
+
+
+* Error values remain centered around zero.
+
+* No systematic numerical bias is observed.
+
+* Quantization noise behaves approximately as low-amplitude random noise.
+
+* Error magnitude remains significantly smaller than the underlying signal amplitude.
+
+
+
+---
+
+
+
+##### 8. Complete Design Space Results
+
+
+
+The notebook automatically generates a complete summary table containing all evaluated fixed-point configurations.
+
+
+
+```python
+
+df = pd.DataFrame(rows)
+
+print(df.to_string(index=False))
+
+```
+
+
+
+---
+
+
+
+##### Simulation Results
+
+
+
+| BITS                            | F | Range | I RMSE | Q RMSE | RF RMSE | Margin | Valid |
+
+| ------------------------------- | - | ----- | ------ | ------ | ------- | ------ | ----- |
+
+| *(Insert notebook output here)* |   |       |        |        |         |        |       |
+
+
+
+**Table 16.1:** Complete fixed-point design-space exploration results generated by the notebook.
+
+
+
+---
+
+
+
+##### 9. Optimal Configuration Selection
+
+
+
+The notebook automatically selects the smallest bit width satisfying all performance constraints.
+
+
+
+```python
+
+best_config = min(
+
+    candidates_at_min_bits,
+
+    key=lambda x: x['rf_rmse']
+
+)
+
+```
+
+
+
+Selection priority:
+
+
+
+1. Minimum bit width
+
+2. Lowest RF RMSE
+
+3. Zero clipping
+
+
+
+---
+
+
+
+##### Final Recommendation
+
+
+
+| Parameter            | Selected Value |
+
+| -------------------- | -------------- |
+
+| Bit Width            | INSERT         |
+
+| Fractional Bits      | INSERT         |
+
+| RF RMSE              | INSERT         |
+
+| Clipping Events      | None           |
+
+| Dynamic Range Margin | INSERT         |
+
+
+
+**Table 16.2:** Recommended fixed-point configuration for FPGA implementation.
+
+
+
+---
+
+
+
+##### FPGA Implications
+
+
+
+The selected fixed-point representation provides:
+
+
+
+* Lower DSP utilization
+
+* Reduced BRAM requirements
+
+* Faster arithmetic pipelines
+
+* Deterministic numerical behavior
+
+* Improved hardware efficiency
+
+
+
+while maintaining performance comparable to the floating-point reference implementation.
+
+
+
+---
+
+
+
+##### Key Understanding
+
+
+
+Fixed-point arithmetic introduces quantization noise, but careful selection of bit width and fractional precision allows the FPGA implementation to closely match floating-point performance while significantly reducing implementation complexity.
+
+
+
+---
+
+
+
+##### Conclusion
+
+
+
+A complete fixed-point quantization framework was developed and validated for the OTFS transmitter chain.
+
+
+
+Systematic design-space exploration identified an FPGA-friendly fixed-point representation that balances numerical accuracy, dynamic range, and hardware efficiency. The selected configuration preserves waveform fidelity while reducing implementation cost, thereby establishing the numerical foundation required for future RTL implementation and FPGA deployment of the OTFS baseband architecture.

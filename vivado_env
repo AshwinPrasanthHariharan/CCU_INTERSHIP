@@ -1,0 +1,76 @@
+#!/bin/bash
+# vim: set ft=sh:
+# --- Xilinx/Vivado Session Environment ---
+
+# 1. Environment Variables
+export _JAVA_AWT_WM_NONREPARENTING=1
+export LC_ALL=C
+export XILINXD_LICENSE_FILE=27000@140.123.92.73
+
+# 2. Safe Wrapper Functions
+vivado() {
+    bash -c 'source ~/Xilinx/2026.1/Vivado/settings64.sh && vivado "$@"' -- "$@"
+}
+
+vlm() {
+    bash -c 'source ~/Xilinx/2026.1/Vivado/settings64.sh && vlm "$@"' -- "$@"
+}
+
+# 3. The Unhook / Cleanup Function
+unhook_vivado() {
+    # Remove the variables
+    unset _JAVA_AWT_WM_NONREPARENTING
+    unset LC_ALL
+    unset XILINXD_LICENSE_FILE
+    
+    # Remove the Vivado functions
+    unset -f vivado
+    unset -f vlm
+    
+    echo "🔌 Vivado session completely unhooked! Shell restored to normal."
+    
+    # Destroy the unhook function itself so no trace is left
+    unset -f unhook_vivado
+}
+
+# 4. Visual Confirmation
+echo "⚡ Vivado session loaded!"
+echo "👉 Run 'vivado' or 'vlm' to start working."
+echo "👉 Run 'unhook_vivado' when you are done to clean your terminal."
+# --- Xilinx/Vivado Session Environment ---
+
+# 1. Environment Variables
+export _JAVA_AWT_WM_NONREPARENTING=1
+export LC_ALL=C
+export XILINXD_LICENSE_FILE=27000@140.123.92.73
+
+# 2. Safe Wrapper Functions
+vivado() {
+    bash -c 'source ~/Xilinx/2026.1/Vivado/settings64.sh && vivado "$@"' -- "$@"
+}
+
+vlm() {
+    bash -c 'source ~/Xilinx/2026.1/Vivado/settings64.sh && vlm "$@"' -- "$@"
+}
+
+# 3. The Unhook / Cleanup Function
+unhook_vivado() {
+    # Remove the variables
+    unset _JAVA_AWT_WM_NONREPARENTING
+    unset LC_ALL
+    unset XILINXD_LICENSE_FILE
+    
+    # Remove the Vivado functions
+    unset -f vivado
+    unset -f vlm
+    
+    echo "🔌 Vivado session completely unhooked! Shell restored to normal."
+    
+    # Destroy the unhook function itself so no trace is left
+    unset -f unhook_vivado
+}
+
+# 4. Visual Confirmation
+echo "⚡ Vivado session loaded!"
+echo "👉 Run 'vivado' or 'vlm' to start working."
+echo "👉 Run 'unhook_vivado' when you are done to clean your terminal."
