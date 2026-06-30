@@ -1,3 +1,20 @@
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+# Python
+__pycache__/
+*.pyc
+
+# Vivado
+*.jou
+*.log
+*.str
+*.Xil/
+.cache/
+.hw/
+.sim/
+.ip_user_files/
+.runs/
+
+# Misc
+.DS_Store
