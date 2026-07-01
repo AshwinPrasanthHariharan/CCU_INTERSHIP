@@ -4594,7 +4594,7 @@ fig, axes = plt.subplots(3,1)
 
 
 
-**Figure 16.2:** Comparison between floating-point and quantized waveforms for the I-channel, Q-channel, and RF signal.
+**Figure 16.2:** Comparison between floating-point and quantized waveforms for the I-channel, Q-chvannel, and RF signal.
 
 
 
