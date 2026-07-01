@@ -4,17 +4,61 @@
 # Python
 __pycache__/
 *.pyc
+# Vivado generated directories
+vivado/**/*.cache/
+vivado/**/*.cache/
 
-# Vivado
+vivado/**/*.hw/
+vivado/**/*.hw/
+
+vivado/**/*.ip_user_files/
+vivado/**/*.ip_user_files/
+
+vivado/**/*.sim/
+vivado/**/*.sim/
+
+vivado/**/*.runs
+vivado/**/*.runs/
+
+vivado/**/*.gen/
+vivado/**/*.gen/
+
+# Vivado logs
 *.jou
 *.log
 *.str
-*.Xil/
-.cache/
-.hw/
-.sim/
-.ip_user_files/
-.runs/
 
-# Misc
-.DS_Store
+# Xilinx temporary files
+.Xil/
+.webtalk/
+
+# XSIM
+xsim.dir/
+*.wdb
+*.pb
+xsim.ini
+
+# Generated simulation scripts
+compile.sh
+elaborate.sh
+simulate.sh
+tb_*.tcl
+*_vlog.prj
+glbl.v
+
+# Databases
+*.db
+*.rlx
+*.sdb
+*.dbg
+*.rtti
+*.svtype
+*.type
+*.reloc
+*.version
+
+# Temporary object files
+obj/
+
+# Memory files copied by Vivado
+vivado/**/mem_init_files/

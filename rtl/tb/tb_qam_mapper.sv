@@ -21,9 +21,9 @@ module tb_qam_mapper;
     );
 
     initial begin
-        $readmemb("rtl/vectors/bitsstream.mem", bits_mem);
-        $readmemb("rtl/vectors/exp_i.mem", exp_i);
-        $readmemb("rtl/vectors/exp_q.mem", exp_q);
+        $readmemb("input.mem", bits_mem);
+        $readmemb("exp_i.mem", exp_i);
+        $readmemb("exp_q.mem", exp_q);
 
         for (int k = 0; k < NUM_SYMS; k++) begin
             bits = bits_mem[k];
