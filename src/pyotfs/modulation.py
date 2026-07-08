@@ -14,6 +14,11 @@ def modulate(bits: list[int], constellation: Constellation = QAM16) -> list[comp
         raise ValueError("Number of bits must be a multiple of bits_per_symbol.")
 
     symbols = []
+    # Explicit fixed-point quantization for RTL-aligned processing
+    Q_BITS = 3
+    Q_MIN = -(1 << (Q_BITS - 1))
+    Q_MAX = (1 << (Q_BITS - 1)) - 1
+
     for i in range(0, len(bits), constellation.bits_per_symbol):
         bit_tuple = tuple(bits[i:i + constellation.bits_per_symbol])
         amplitude = (
@@ -22,6 +27,8 @@ def modulate(bits: list[int], constellation: Constellation = QAM16) -> list[comp
         )
         if amplitude is None:
             raise ValueError(f"Bit tuple {bit_tuple} not found in LUT.")
-        symbols.append(complex(amplitude, 0))  # Assuming real axis modulation
+        i_q = max(Q_MIN, min(Q_MAX, round(amplitude.real)))
+        q_q = max(Q_MIN, min(Q_MAX, round(amplitude.imag)))
+        symbols.append(complex(i_q, q_q))
 
     return symbols
