@@ -14,6 +14,10 @@ module tb_qam_mapper;
     logic signed [2:0] exp_q [0:NUM_SYMS-1];
     int errors = 0;
 
+    localparam string INPUT_MEM = "rtl/vectors/input.mem";
+    localparam string EXP_I_MEM  = "rtl/vectors/exp_i.mem";
+    localparam string EXP_Q_MEM  = "rtl/vectors/exp_q.mem";
+
     qam_mapper dut(
         .bits(bits),
         .i(i),
@@ -21,9 +25,9 @@ module tb_qam_mapper;
     );
 
     initial begin
-        $readmemb("input.mem", bits_mem);
-        $readmemb("exp_i.mem", exp_i);
-        $readmemb("exp_q.mem", exp_q);
+        $readmemb(INPUT_MEM, bits_mem);
+        $readmemb(EXP_I_MEM, exp_i);
+        $readmemb(EXP_Q_MEM, exp_q);
 
         for (int k = 0; k < NUM_SYMS; k++) begin
             bits = bits_mem[k];

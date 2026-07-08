@@ -15,6 +15,19 @@ always_comb begin
 
     case (MODULATION_ORDER)
 
+        4: begin
+
+            case(addr)
+
+                2'b00: begin i=-1; q=-1; end
+                2'b01: begin i=-1; q= 1; end
+                2'b11: begin i= 1; q= 1; end
+                2'b10: begin i= 1; q=-1; end
+
+            endcase
+
+        end
+
         16: begin
 
             case(addr)
