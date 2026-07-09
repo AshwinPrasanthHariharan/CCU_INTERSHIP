@@ -78,11 +78,21 @@ module isfft_pingpong #(
         end
     endfunction
 
+    // Match Python vector generation (np.rint) with nearest-integer twiddle quantization.
+    function automatic int quantize_twiddle(input real v);
+        begin
+            if (v >= 0.0)
+                quantize_twiddle = $rtoi(v + 0.5);
+            else
+                quantize_twiddle = $rtoi(v - 0.5);
+        end
+    endfunction
+
     initial begin
         for (ti = 0; ti < MAX_FFT; ti = ti + 1) begin
             ang = (2.0 * PI_R * ti) / MAX_FFT;
-            tw_cos[ti] = $rtoi($cos(ang) * (1 << TW_FRAC));
-            tw_sin[ti] = $rtoi($sin(ang) * (1 << TW_FRAC));
+            tw_cos[ti] = quantize_twiddle($cos(ang) * (1 << TW_FRAC));
+            tw_sin[ti] = quantize_twiddle($sin(ang) * (1 << TW_FRAC));
         end
     end
 
@@ -230,7 +240,8 @@ module isfft_pingpong #(
                             phase = ((rr * nn) * MAX_FFT) / M;
                             phase = phase % MAX_FFT;
                             wr = tw_cos[phase];
-                            wi = -tw_sin[phase]; // -j for FFT
+                            // Sign-extend before negation to avoid TW_W overflow at -min value.
+                            wi = -$signed({{(32-TW_W){tw_sin[phase][TW_W-1]}}, tw_sin[phase]}); // -j for FFT
 
                             pr = (xr * wr - xi * wi) >>> TW_FRAC;
                             pi = (xr * wi + xi * wr) >>> TW_FRAC;

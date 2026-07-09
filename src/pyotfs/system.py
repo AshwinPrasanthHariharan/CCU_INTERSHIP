@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from .constallation import Constellation, QAM16
 from .ifft import add_cyclic_prefix, heisenberg_ifft, serialize_slots
-from .modulation import modulate
+from .modulation import modulate,constilate
 
 
 @dataclass
@@ -19,7 +19,7 @@ class System:
         )
     )
 
-    def modulate_bits(self, bits: list[int]) -> list[complex]:
+    def constilate(self, bits: list[int]) -> list[complex]:
         """
         Modulate a sequence of bits into complex symbols using the system's constellation.
 
@@ -29,7 +29,14 @@ class System:
         Returns:
             list[complex]: A list of complex symbols representing the modulated signal.
         """
-        return modulate(bits, self.constellation)
+        return constilate(bits, self.constellation)
+    def modulate(self, D: np.ndarray) -> np.ndarray:
+        """Run the OTFS modulation stage on a 2D symbol grid."""
+        if D.ndim != 2:
+            raise ValueError("D must be a 2D array with shape (M, N).")
+        if D.shape != (self.M, self.N):
+            raise ValueError(f"D shape must be ({self.M}, {self.N}).")
+        return modulate(D, self.M, self.N)
 
     def ifft_block(self, x_tf: np.ndarray) -> np.ndarray:
         """Run the Heisenberg IFFT stage on a time-frequency grid."""
