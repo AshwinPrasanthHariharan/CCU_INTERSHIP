@@ -88,6 +88,27 @@ module isfft_pingpong #(
         end
     endfunction
 
+    function automatic int round_ties_to_even_div(input int signed value, input int divisor);
+        int signed quotient;
+        int signed remainder;
+        int signed abs_remainder;
+        int signed half;
+        begin
+            quotient = value / divisor;
+            remainder = value % divisor;
+            abs_remainder = (remainder < 0) ? -remainder : remainder;
+            half = divisor / 2;
+
+            if (abs_remainder > half) begin
+                quotient = quotient + ((value >= 0) ? 1 : -1);
+            end else if ((abs_remainder == half) && ((quotient & 1) != 0)) begin
+                quotient = quotient + ((value >= 0) ? 1 : -1);
+            end
+
+            round_ties_to_even_div = quotient;
+        end
+    endfunction
+
     initial begin
         for (ti = 0; ti < MAX_FFT; ti = ti + 1) begin
             ang = (2.0 * PI_R * ti) / MAX_FFT;
