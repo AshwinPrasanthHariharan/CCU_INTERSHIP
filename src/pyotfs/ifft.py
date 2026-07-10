@@ -3,39 +3,24 @@ from __future__ import annotations
 import numpy as np
 
 
-def _wrap_signed(v: int, width: int) -> int:
-	mask = (1 << width) - 1
-	u = int(v) & mask
-	if u >= (1 << (width - 1)):
-		u -= (1 << width)
-	return u
-
-
-def _quantize_real(v: np.ndarray, width: int) -> np.ndarray:
-	return np.vectorize(lambda x: _wrap_signed(int(np.rint(x)), width))(v)
-
-
 def quantize_complex_grid(x: np.ndarray, width: int) -> np.ndarray:
 	"""Quantize a complex-valued array to signed fixed-point integers."""
-	if x.ndim != 2:
-		raise ValueError("x must be a 2D array with shape (M, N).")
-	if width < 2:
-		raise ValueError("width must be at least 2.")
-
+	q_min = -(1 << (width - 1))
+	q_max = (1 << (width - 1)) - 1
 	q = np.empty(x.shape, dtype=np.complex128)
-	q.real = _quantize_real(np.real(x), width)
-	q.imag = _quantize_real(np.imag(x), width)
+	q.real = np.clip(np.round(x.real), q_min, q_max)
+	q.imag = np.clip(np.round(x.imag), q_min, q_max)
 	return q
 
 
-def heisenberg_ifft(x_tf: np.ndarray, quantize: bool = False, iq_width: int = 3) -> np.ndarray:
+def heisenberg_ifft(x_tf: np.ndarray, quantize: bool = True, iq_width: int = 4) -> np.ndarray:
 	"""Apply the OTFS Heisenberg IFFT block.
 
 	This mirrors the Tx notebook implementation:
 	``np.fft.ifft(X_TF, axis=0) * np.sqrt(M)``
 
 	Args:
-		x_tf: Time-frequency gritx_complex_samplesd with shape ``(M, N)``.
+		x_tf: Time-frequency grid with shape ``(M, N)``.
 		quantize: If True, round and wrap real/imag parts to signed integers.
 		iq_width: Bit width used when ``quantize`` is enabled.
 
@@ -61,42 +46,12 @@ def serialize_slots(time_domain_slots: np.ndarray) -> np.ndarray:
 
 
 def add_cyclic_prefix(time_domain_slots: np.ndarray, cp_len: int) -> np.ndarray:
-	"""Insert a cyclic prefix per slot and concatenate into one frame.
-
-	Args:
-		time_domain_slots: Time-domain slots with shape ``(M, N)``.
-		cp_len: Number of tail samples copied to the front of each row.
-
-	Returns:
-		1D CP-extended transmit frame.
-	"""
-	if time_domain_slots.ndim != 2:
-		raise ValueError("time_domain_slots must be a 2D array with shape (M, N).")
-	if cp_len < 0:
-		raise ValueError("cp_len must be non-negative.")
-	if cp_len > time_domain_slots.shape[1]:
-		raise ValueError("cp_len cannot exceed row length N.")
-
+	"""Insert a cyclic prefix per slot and concatenate into one frame."""
 	rows_with_cp = []
 	for row in time_domain_slots:
 		cp = row[-cp_len:] if cp_len else np.array([], dtype=row.dtype)
 		rows_with_cp.append(np.concatenate([cp, row]))
-
 	return np.concatenate(rows_with_cp)
-
-
-def _trunc_div_toward_zero(a: int, b: int) -> int:
-	return int(a / b)
-
-
-def _int_sqrt_floor(v: int) -> int:
-	x = 0
-	while (x + 1) * (x + 1) <= v:
-		x += 1
-	return max(x, 1)
-
-
-
 
 
 def generate_isfft_vectors(
@@ -106,67 +61,56 @@ def generate_isfft_vectors(
 	max_fft: int = 64,
 	tw_w: int = 12,
 ) -> dict[str, np.ndarray]:
-	"""Generate RTL-aligned ISFFT reference vectors from a complex symbol grid.
-
-	The helper keeps the exact fixed-point arithmetic used by the notebook, but
-	centralizes the implementation inside ``pyotfs`` so the notebook stays thin.
-	"""
-	if symbol_grid.ndim != 2:
-		raise ValueError("symbol_grid must be a 2D array with shape (M, N).")
-	if iq_width < 2:
-		raise ValueError("iq_width must be at least 2.")
-	if out_width is None:
-		out_width = iq_width + 4
-
+	"""Generate RTL-aligned ISFFT reference vectors from a complex symbol grid."""
+	out_width = out_width or iq_width + 4
 	m, n = symbol_grid.shape
 	tw_frac = tw_w - 2
+	s_n = int(np.sqrt(n))
+	s_m = int(np.sqrt(m))
+	
+	# Quantization ranges
+	in_min, in_max = -(1 << (iq_width - 1)), (1 << (iq_width - 1)) - 1
+	out_min, out_max = -(1 << (out_width - 1)), (1 << (out_width - 1)) - 1
+	
+	# Precompute twiddle factors
 	angles = 2.0 * np.pi * np.arange(max_fft) / max_fft
-	tw_cos = np.rint(np.cos(angles) * (1 << tw_frac)).astype(int)
-	tw_sin = np.rint(np.sin(angles) * (1 << tw_frac)).astype(int)
-
-	in_i = [_wrap_signed(int(np.rint(value.real)), iq_width) for value in symbol_grid.reshape(-1, order="C")]
-	in_q = [_wrap_signed(int(np.rint(value.imag)), iq_width) for value in symbol_grid.reshape(-1, order="C")]
-
+	tw_cos = np.round(np.cos(angles) * (1 << tw_frac)).astype(int)
+	tw_sin = np.round(np.sin(angles) * (1 << tw_frac)).astype(int)
+	
+	# Quantize input
+	in_i = [int(np.clip(np.round(v.real), in_min, in_max)) for v in symbol_grid.reshape(-1, order="C")]
+	in_q = [int(np.clip(np.round(v.imag), in_min, in_max)) for v in symbol_grid.reshape(-1, order="C")]
+	
+	# Row FFT (column-wise)
 	row_i = [0] * (m * n)
 	row_q = [0] * (m * n)
-	s_n = _int_sqrt_floor(n)
 	for rr in range(m):
 		for kk in range(n):
-			acc_r = 0
-			acc_i = 0
+			acc_r = acc_i = 0
 			for nn in range(n):
-				idx = rr * n + nn
-				xr = in_i[idx]
-				xi = in_q[idx]
+				xr, xi = in_i[rr * n + nn], in_q[rr * n + nn]
 				phase = ((kk * nn) * max_fft) // n % max_fft
-				wr = int(tw_cos[phase])
-				wi = int(tw_sin[phase])
+				wr, wi = int(tw_cos[phase]), int(tw_sin[phase])
 				acc_r += (xr * wr - xi * wi) >> tw_frac
 				acc_i += (xr * wi + xi * wr) >> tw_frac
-			out_idx = rr * n + kk
-			row_i[out_idx] = _wrap_signed(_trunc_div_toward_zero(acc_r, s_n), out_width)
-			row_q[out_idx] = _wrap_signed(_trunc_div_toward_zero(acc_i, s_n), out_width)
-
+			row_i[rr * n + kk] = int(np.clip(np.round(acc_r / s_n), out_min, out_max))
+			row_q[rr * n + kk] = int(np.clip(np.round(acc_i / s_n), out_min, out_max))
+	
+	# Column FFT (row-wise, inverse)
 	out_i = [0] * (m * n)
 	out_q = [0] * (m * n)
-	s_m = _int_sqrt_floor(m)
 	for rr in range(m):
 		for cc in range(n):
-			acc_r = 0
-			acc_i = 0
+			acc_r = acc_i = 0
 			for nn in range(m):
-				idx = nn * n + cc
-				xr = row_i[idx]
-				xi = row_q[idx]
+				xr, xi = row_i[nn * n + cc], row_q[nn * n + cc]
 				phase = ((rr * nn) * max_fft) // m % max_fft
-				wr = int(tw_cos[phase])
-				wi = -int(tw_sin[phase])
+				wr, wi = int(tw_cos[phase]), -int(tw_sin[phase])
 				acc_r += (xr * wr - xi * wi) >> tw_frac
 				acc_i += (xr * wi + xi * wr) >> tw_frac
-			out_idx = rr * n + cc
-			out_i[out_idx] = _wrap_signed(_trunc_div_toward_zero(acc_r, s_m), out_width)
-			out_q[out_idx] = _wrap_signed(_trunc_div_toward_zero(acc_i, s_m), out_width)
-
+			out_i[rr * n + cc] = int(np.clip(np.round(acc_r / s_m), out_min, out_max))
+			out_q[rr * n + cc] = int(np.clip(np.round(acc_i / s_m), out_min, out_max))
+	
 	return {
 		"in_i": np.asarray(in_i, dtype=int),
 		"in_q": np.asarray(in_q, dtype=int),
