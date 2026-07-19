@@ -104,7 +104,6 @@ extending the verification infrastructure.
 - [ ] FPGA Development
     - [x] Vivado project
     - [x] RTL synthesis
-    - [x] Sythesis
     - [ ] Bitstream generation
     - [x] FPGA programming
     - [ ] Hardware characterization
@@ -115,7 +114,7 @@ extending the verification infrastructure.
     - [x] Python packaging
     - [ ] Icarus Verilog automation
     - [ ] Vivado Tcl integration
-    - [ ] Source-only project generation
+        - [ ] Source-only project generation
         - [ ] Automated synthesis
         - [ ] Automated implementation
         - [ ] Automated bitstream generation
@@ -131,6 +130,31 @@ extending the verification infrastructure.
     - [ ] Module documentation
     - [ ] Verification guide
     - [ ] Development guide
+
+## Development Notes
+
+### Vivado Tcl Integration
+
+The long-term objective is to transition the project from a GUI-managed
+Vivado workflow to a fully source-driven workflow. The repository should
+contain only RTL sources, constraints, Tcl scripts, and documentation.
+Generated project files should be recreated automatically, enabling
+reproducible builds, cleaner version control, and future CI/CD support.
+
+### Fixed-Point Quantization
+
+The current RTL uses an initial fixed-point representation developed
+during the internship. Future work should migrate each processing stage
+to the recommended precision identified during the quantization
+design-space exploration to improve numerical accuracy while minimizing
+hardware resource utilization.
+
+### RTL Receiver
+
+The floating-point Python receiver serves as the architectural reference
+for the receiver RTL implementation. New RTL modules should maintain
+functional equivalence with the Python model and include corresponding
+verification testbenches.
 
  ## Contributing
 
