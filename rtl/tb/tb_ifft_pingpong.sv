@@ -121,9 +121,9 @@ module tb_ifft_pingpong;
     );
 
     initial begin
-        $readmemb("rtl/vectors/input.mem", bits_mem);
-        $readmemb("rtl/vectors/ifft_pingpong_exp_i.mem", exp_i);
-        $readmemb("rtl/vectors/ifft_pingpong_exp_q.mem", exp_q);
+        $readmemb("input.mem", bits_mem);
+        $readmemb("ifft_pingpong_exp_i.mem", exp_i);
+        $readmemb("ifft_pingpong_exp_q.mem", exp_q);
 
         bits = '0;
         in_valid = 1'b0;

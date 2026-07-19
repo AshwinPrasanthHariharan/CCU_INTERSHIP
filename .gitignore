@@ -1,64 +1,99 @@
-# pixi environments
+# PIXI
+
 .pixi/*
 !.pixi/config.toml
-# Python
+
+# PYTHON
+
 __pycache__/
-*.pyc
-# Vivado generated directories
-vivado/**/*.cache/
-vivado/**/*.cache/
+*.py[cod]
+.ipynb_checkpoints/
 
-vivado/**/*.hw/
-vivado/**/*.hw/
+# VIVADO / XILINX
 
-vivado/**/*.ip_user_files/
-vivado/**/*.ip_user_files/
+# Project directories
+**/.Xil/
+**/*.cache/
+**/*.gen/
+**/*.hw/
+**/*.ip_user_files/
+**/*.runs/
+**/*.sim/
+**/*.srcs/
+**/.webtalk/
 
-vivado/**/*.sim/
-vivado/**/*.sim/
+# XSim
+**/xsim.dir/
+**/xsim.ini
+**/work/
 
-vivado/**/*.runs
-vivado/**/*.runs/
+# Generated scripts
+**/compile.sh
+**/compile.bat
+**/elaborate.sh
+**/elaborate.bat
+**/simulate.sh
+**/simulate.bat
 
-vivado/**/*.gen/
-vivado/**/*.gen/
+# Logs & temporary files
+**/*.jou
+**/*.log
+**/*.str
+**/*.pb
+**/*.wdb
+**/*.wcfg
+**/*.tmp
+**/*.bak
+**/*.backup
 
-# Vivado logs
-*.jou
-*.log
-*.str
+# Usage statistics
+**/usage_statistics_*.xml
 
-# Xilinx temporary files
-.Xil/
-.webtalk/
+# Memory initialization (generated)
+**/mem_init_files/
 
-# XSIM
-xsim.dir/
-*.wdb
-*.pb
-xsim.ini
+# User-specific project files
+**/*.xpr.user
+**/*.lpr
 
-# Generated simulation scripts
-compile.sh
-elaborate.sh
-simulate.sh
-tb_*.tcl
-*_vlog.prj
-glbl.v
+# Hardware manager / exported hardware
+**/*.xsa
+**/*.hwh
 
-# Databases
-*.db
-*.rlx
-*.sdb
-*.dbg
-*.rtti
-*.svtype
-*.type
-*.reloc
-*.version
+# Generated checkpoints
+**/*.dcp
 
-# Temporary object files
-obj/
+# Generated synthesis netlists
+**/*.edf
+**/*.edf.gz
+**/*.edn
 
-# Memory files copied by Vivado
-vivado/**/mem_init_files/
+# Generated implementation outputs
+**/*.bit
+**/*.bin
+**/*.mcs
+**/*.prm
+**/*.ltx
+
+# Generated reports
+**/*.rpt
+
+# WebTalk
+**/webtalk*.jou
+**/webtalk*.log
+
+# SIMULATION
+
+*.vvp
+*.vcd
+*.fst
+*.ghw
+*.gtkw
+
+# MISCELLANEOUS
+
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo

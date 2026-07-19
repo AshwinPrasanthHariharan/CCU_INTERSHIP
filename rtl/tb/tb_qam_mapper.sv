@@ -14,9 +14,9 @@ module tb_qam_mapper;
     logic signed [2:0] exp_q [0:NUM_SYMS-1];
     int errors = 0;
 
-    localparam string INPUT_MEM = "rtl/vectors/input.mem";
-    localparam string EXP_I_MEM  = "rtl/vectors/exp_i.mem";
-    localparam string EXP_Q_MEM  = "rtl/vectors/exp_q.mem";
+    localparam string INPUT_MEM = "input.mem";
+    localparam string EXP_I_MEM  = "exp_i.mem";
+    localparam string EXP_Q_MEM  = "exp_q.mem";
 
     qam_mapper dut(
         .bits(bits),

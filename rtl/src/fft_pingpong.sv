@@ -1,3 +1,25 @@
+//------------------------------------------------------------------------------
+// Module      : fft_pingpong
+//
+// Purpose:
+//   - Compute M-point FFTs on an incoming MxN frame to recover time-frequency
+//     coefficients in the receiver chain. Mirrors the transmitter-side IFFT
+//     conventions (twiddle formats, normalization, clipping) to ensure
+//     numerical symmetry for BER comparisons.
+//
+// Behavior / Algorithm:
+//   1. On `frame_valid`, for each output index (r,c) perform an M-point FFT
+//      accumulation across nn using quantized twiddle factors and fixed-point
+//      arithmetic: accumulate `(xr*wr - xi*wi) >>> TW_FRAC` and
+//      `(xr*wi + xi*wr) >>> TW_FRAC`.
+//   2. Apply integer normalization via `int_sqrt_floor(M)` and `round_ties_to_even_div`.
+//   3. Clip outputs to `OUT_WIDTH` using `clip_out()` to avoid overflow.
+//
+// Notes:
+//   - The module is intentionally implemented with clear loop-based
+//     arithmetic for small M/N sizes. Twiddle generation is done in the
+//     initial block and stored in `tw_cos` and `tw_sin` arrays.
+//------------------------------------------------------------------------------
 module fft_pingpong #(
 	parameter int M         = 4,
 	parameter int N         = 4,

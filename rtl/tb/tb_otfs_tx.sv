@@ -164,13 +164,13 @@ module tb_otfs_tx;
 
     initial begin
         if (!$value$plusargs("INPUT_MEM=%s", input_mem_file)) begin
-            input_mem_file = "rtl/vectors/input.mem";
+            input_mem_file = "input.mem";
         end
         if (!$value$plusargs("EXP_I_MEM=%s", exp_i_mem_file)) begin
-            exp_i_mem_file = "rtl/vectors/ifft_cp_in_i.mem";
+            exp_i_mem_file = "ifft_cp_in_i.mem";
         end
         if (!$value$plusargs("EXP_Q_MEM=%s", exp_q_mem_file)) begin
-            exp_q_mem_file = "rtl/vectors/ifft_cp_in_q.mem";
+            exp_q_mem_file = "ifft_cp_in_q.mem";
         end
 
         $display("[TB] Reading input symbols from: %s", input_mem_file);

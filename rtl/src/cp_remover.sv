@@ -1,3 +1,23 @@
+//------------------------------------------------------------------------------
+// Module      : cp_remover
+//
+// Purpose:
+//   - Remove the cyclic prefix from incoming M x (N+CP_LEN) frames and
+//     restore the original M x N payload grid for downstream FFT/ISFFT
+//     processing in the receiver chain.
+//
+// Behavior / Algorithm:
+//   1. When `frame_valid` is asserted, for each row r copy samples
+//      `frame_i[r][CP_LEN + c]` / `frame_q[r][CP_LEN + c]` for c=0..N-1 into
+//      the compact output arrays `out_i[r][c]` and `out_q[r][c]`.
+//   2. Assert `out_valid` while the payload grid is presented and signal
+//      `frame_done` once downstream modules acknowledge the data via
+//      `out_ready` and the transfer completes.
+//
+// Notes:
+//   - This module is a deterministic buffer extractor; it assumes valid
+//     framing and does not perform timing recovery or synchronization.
+//------------------------------------------------------------------------------
 module cp_remover #(
     parameter int M         = 4,
     parameter int N         = 4,

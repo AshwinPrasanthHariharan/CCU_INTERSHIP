@@ -1,3 +1,32 @@
+//------------------------------------------------------------------------------
+// Module      : ifft_pingpong
+//
+// Purpose:
+//   - Perform per-column IFFT/time-domain synthesis on an MxN frame. The
+//     module accepts an MxN `frame_i`/`frame_q` matrix (fixed-point inputs)
+//     and computes the time-domain samples `time_i`/`time_q` for each row and
+//     column using precomputed twiddle LUTs.
+//
+// Behavior / Algorithm:
+//   1. When `frame_valid` is asserted, iterate over rows r and columns c and
+//      compute the IFFT sum across nn: accumulate `(xr*wr - xi*wi) >>> TW_FRAC`
+//      and `(xr*wi + xi*wr) >>> TW_FRAC` using twiddle entries indexed by
+//      `phase = ((r*nn)*MAX_FFT)/M`.
+//   2. After accumulation, divide by `sM = int_sqrt_floor(M)` and apply
+//      `round_ties_to_even_div()` to produce the final rounded and clipped
+//      output stored in `time_i`/`time_q`.
+//
+// Numerical notes:
+//   - Twiddles are quantized to `TW_W` bits and products are adjusted by
+//     `TW_FRAC` fractional bits; rounding-to-even preserves numerical
+//     determinism consistent with the Python golden model.
+//   - The module asserts `frame_done` after computing the entire frame.
+//
+// Implementation notes:
+//   - Implementation uses straightforward nested loops for clarity and
+//     portability; for larger FFT sizes a dedicated optimized/pipelined FFT
+//     IP would be preferred.
+//------------------------------------------------------------------------------
 module ifft_pingpong #(
     parameter int M         = 4,
     parameter int N         = 4,

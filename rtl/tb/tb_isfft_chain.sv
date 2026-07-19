@@ -101,13 +101,13 @@ module tb_isfft_chain;
 
     initial begin
         if (!$value$plusargs("INPUT_MEM=%s", input_mem_file)) begin
-            input_mem_file = "rtl/vectors/input.mem";
+            input_mem_file = "input.mem";
         end
         if (!$value$plusargs("EXP_I_MEM=%s", exp_i_mem_file)) begin
-            exp_i_mem_file = "rtl/vectors/ifft_exp_i.mem";
+            exp_i_mem_file = "isfft_exp_i.mem";
         end
         if (!$value$plusargs("EXP_Q_MEM=%s", exp_q_mem_file)) begin
-            exp_q_mem_file = "rtl/vectors/ifft_exp_q.mem";
+            exp_q_mem_file = "isfft_exp_q.mem";
         end
 
         $display("[TB] Reading input symbols from: %s", input_mem_file);

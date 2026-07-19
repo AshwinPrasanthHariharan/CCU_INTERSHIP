@@ -1,3 +1,26 @@
+//------------------------------------------------------------------------------
+// Module      : cp_inserter
+//
+// Purpose:
+//   - Insert a cyclic prefix of length `CP_LEN` into each row of the
+//     time-domain MxN frame, producing an M x (N+CP_LEN) output frame suitable
+//     for transmission or DAC playback.
+//
+// Behavior / Algorithm:
+//   1. On `frame_valid`, for each row r:
+//       a. Copy the last `CP_LEN` samples from `frame[*][N-CP_LEN .. N-1]`
+//          into the prefix positions `out_bank[r*(N+CP_LEN) + 0..CP_LEN-1]`.
+//       b. Copy the payload samples `frame[*][0..N-1]` into subsequent
+//          positions to form the contiguous output frame row.
+//   2. Enter S_STREAM state and present `out_bank` words to the external
+//      interface while honoring `out_ready` backpressure; assert `frame_done`
+//      when the entire M*(N+CP_LEN) words are transmitted.
+//
+// Notes:
+//   - The operation is a deterministic memory rearrangement and does not
+//     perform arithmetic on the payload samples. It is designed to be
+//     synthesizable with minimal BRAM/FF overhead.
+//------------------------------------------------------------------------------
 module cp_inserter #(
     parameter int M         = 4,
     parameter int N         = 4,

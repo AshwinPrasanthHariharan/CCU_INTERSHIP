@@ -1,8 +1,35 @@
 //------------------------------------------------------------------------------
 // Module      : grid_loader
 //
-// Stores incoming QAM I/Q symbols into an MxN delay-Doppler grid in row-major
-// order. Asserts grid_valid once the full frame is loaded.
+// Purpose:
+//   - Accepts a stream of fixed-width QAM I/Q symbols and writes them into an
+//     M-by-N Delay-Doppler grid in row-major order. When M*N symbols have been
+//     received, the module asserts `grid_valid` to indicate a complete frame.
+//
+// Behavior / Algorithm (implementation mapping):
+//   1. On `frame_start`, reset the write pointers (`wr_row`, `wr_col`),
+//      symbol counter (`sym_count`) and deassert `grid_valid` (prepare to
+//      capture a new frame).
+//   2. While `in_valid` is asserted and the frame is not yet complete:
+//       a. Write the incoming `in_i`/`in_q` into the memory arrays
+//          `grid_i[wr_row][wr_col]` and `grid_q[wr_row][wr_col]`.
+//       b. Increment the linear symbol counter `sym_count`.
+//       c. Advance `wr_col`; if `wr_col` rolls over (== N-1), clear it and
+//          increment `wr_row`.
+//       d. When `sym_count == TOTAL_SYMS - 1` set `grid_valid` to 1 to signal
+//          a complete frame is available for downstream processing.
+//   3. The module exposes `wr_row`/`wr_col` as optional debug outputs so that
+//      external TBs or monitors can observe the current write position.
+//
+// Notes:
+//   - The storage is a synthesizable 2-D logic array sized [0:M-1][0:N-1].
+//   - The design assumes a single-clock synchronous interface with
+//     active-high `in_valid` sampling on the rising edge of `clk`.
+//   - `grid_valid` remains high until a new `frame_start` resets the
+//     internal counters and begins a new capture.
+//
+// See: rtl/tb/tb_otfs_tx.sv for how the testbench feeds `in_valid`/`bits`
+// and how downstream modules sample `grid_i`/`grid_q` when `grid_valid`.
 //------------------------------------------------------------------------------
 module grid_loader #(
     parameter int M        = 4,

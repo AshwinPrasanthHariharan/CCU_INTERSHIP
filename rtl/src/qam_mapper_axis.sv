@@ -1,3 +1,27 @@
+//------------------------------------------------------------------------------
+// Module      : qam_mapper_axis
+//
+// Purpose:
+//   - Streaming, per-axis symbol mapper that accepts two-bit symbol halves on
+//     a simple valid handshake and emits successive I and Q axis samples.
+//   - Designed for simple axis-style upstream interfaces where each nibble is
+//     provided as two sequential 2-bit symbols (I then Q) and `symbol_done`
+//     flags the completion of a full complex symbol.
+//
+// Behavior / Algorithm:
+//   1. On each `in_valid` cycle, call `map_axis_bits()` to convert the
+//      incoming 2-bit group into a signed axis level.
+//   2. Alternate between I and Q outputs using `next_axis_is_q`. The first
+//      2-bit group for a symbol is emitted as I, the second as Q; when Q is
+//      emitted `symbol_done` is asserted for one cycle.
+//   3. `pending_i` and `pending_q` store the most recently received I/Q
+//      halves for optional debugging or downstream synchronization.
+//
+// Notes:
+//   - Mapping function `map_axis_bits` implements a reduced-level mapping used
+//     for axis test flows (see `rtl/src/qam_mapper.sv` for full nibble ROM
+//     mapping).
+//------------------------------------------------------------------------------
 module qam_mapper_axis #(
     parameter int IQ_WIDTH = 3
 )(

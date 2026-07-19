@@ -1,3 +1,38 @@
+//------------------------------------------------------------------------------
+// Module      : isfft_pingpong
+//
+// Purpose:
+//   - Perform the ISFFT transformation on an MxN Delay-Doppler grid using a
+//     dual-bank (ping-pong) memory architecture to support simultaneous
+//     capture and processing without stalling the input stream.
+//
+// Behavior / Algorithm (high-level):
+//   1. Capture: when `grid_valid` is asserted, copy the incoming grid into
+//      the active capture bank `in_bank[cap_bank_sel]` and assert the
+//      corresponding `bank_full` flag. Toggle `cap_bank_sel` to prepare the
+//      other bank for capture.
+//   2. Row pass: for the selected processing bank (`proc_bank_sel`), run a
+//      row-wise IFFT across the N columns producing `row_bank` entries. Uses
+//      precomputed twiddle LUTs (`tw_cos`, `tw_sin`) in Q(TW_FRAC) format.
+//   3. Column pass: run a column-wise FFT across the M rows on the row bank
+//      results to produce the time-frequency output in `out_bank`.
+//   4. Stream out: present out samples from `out_bank[proc_bank_sel]` using
+//      `out_valid`/`out_i`/`out_q` while the opposite bank is available for
+//      capture. Manage `frame_start` and `frame_done` control signals.
+//
+// Numerical notes:
+//   - Twiddle factors are quantized to `TW_W` bits with `TW_FRAC` fractional
+//     bits; MAC results are shifted right by `TW_FRAC` to rescale products.
+//   - Normalization uses integer `int_sqrt_floor()` approximations and
+//     `round_ties_to_even_div()` to maintain deterministic rounding behavior.
+//
+// Control & synchronization:
+//   - FSM states (S_IDLE, S_ROW_PASS, S_COL_PASS, S_STREAM) sequence the
+//     passes; `busy` indicates active processing. The module provides debug
+//     visibility via `wr_row`/`wr_col` signals supplied by the grid loader.
+//
+// See: rtl/tb/tb_otfs_tx.sv for interaction patterns and vectorized tests.
+//------------------------------------------------------------------------------
 module isfft_pingpong #(
     parameter int M         = 4,
     parameter int N         = 4,
