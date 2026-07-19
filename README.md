@@ -32,7 +32,7 @@ deployment, and evaluate new architectures and optimizations.
 | Path             | Description                                                                                                             |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `notebooks/`     | Jupyter notebooks for algorithm exploration, validation and development of the OTFS transmitter.                        |
-| `rtl/`           | RTL development and functional verification SystemVerilog source files, testbenches, and verification vectors.         |
+| `rtl/`           | RTL development and functional verification, SystemVerilog source files, testbenches, and verification vectors.         |
 | `scripts/`       | Development utilities and helper scripts used to ease common development tasks and Vivado workflows.                   |
 | `src/`           | Python source code for the OTFS reference model implementation and fixed point quantization utilities.                 |
 | `vivado/`        | Vivado project files used for FPGA synthesis, implementation, and project management.                                  |
@@ -51,6 +51,8 @@ The repository is organized into independent components:
 * **Development Utilities ([`scripts/`](./scripts/))** provide helper functions and automation for common development workflows.
 * **Design Exploration ([`notebooks/`](./notebooks/))** contains notebooks used during algorithm development and validation.
 * **FPGA Project ([`vivado/`](./vivado/))** contains the Vivado project used for synthesis and implementation.
+* **Pixi Configuration ([`pixi.toml`](./pixi.toml))** defines the project's development environment, dependencies, tasks, and workspace configuration.
+* **Python Project Configuration ([`pyproject.toml`](./pyproject.toml))** defines the Python package metadata, build system, and project configuration.
 
 
 ## Project Status
@@ -61,43 +63,74 @@ implementation. The current focus of future development is completing the receiv
 RTL, improving the fixed-point implementation using the quantization study, and
 extending the verification infrastructure.
 
-| Component                 | Status | Notes |
-|--------------------------|:------:|-------|
-| Python Transmitter       |  [*]   | Complete reference model. |
-| Python Channel Model     |  [.]   | Needs to . |
-| Python Receiver          |  [.]   | Floating-point implementation(needs to be modulized). |
-| Quantization Framework   |  [.]   | Precision optimization pending. |
-| RTL Transmitter          |  [.]   | Partially implemented(need to tune quantization). |
-| RTL Receiver             |  [.]   | Only the  FFT and CP_REMOVER has been done(need to be quantizationed as well)  . |
-| RTL Verification         |  [.]   | Core modules verified. |
-| FPGA Synthesis           |  [.]   | Initial Vivado project available. |
-| Development Environment  |  [*]   | Pixi environment available. |
+## Project Status & Roadmap \#(pls free to add to this section if required)
 
-### Notes
+- [x] Python Reference Model
+    - [x] Transmitter
+        - [x] Modulization
+    - [ ] Channel Model
+        - [ ] Modulization
+    - [ ] Receiver
+        - [ ] Modulization
+    - [x] End-to-End Validation
 
-- **Python Receiver:** Complete floating-point reference implementation used as
-  the basis for future RTL receiver development.
+- [ ] Fixed-Point Quantization
+    - [x] Quantization framework
+    - [x] Design-space exploration
+    - [x] Initial fixed-point implementation
+    - [ ] Migrate to recommended precision
+    - [ ] Optimize stage-specific word lengths
+    - [ ] Improve numerical accuracy
 
-- **Quantization Framework:** The current fixed-point implementation is
-  functional but should be refined using the design-space exploration results to
-  improve numerical precision.
+- [ ] RTL Transmitter
+    - [x] Gray-coded 16-QAM Mapper
+    - [x] Delay-Doppler Grid Loader
+    - [x] ISFFT
+    - [x] IFFT
+    - [x] Cyclic Prefix Inserter
+    - [ ] Top-level integration
+    - [ ] Timing optimization
+    - [ ] Resource optimization
 
-- **RTL Transmitter:** The transmitter datapath is partially implemented.
-  Modules such as the FFT/IFFT, QAM Mapper, Grid Loader, Cyclic Prefix Inserter,
-  and Cyclic Prefix Remover are available, while integration and remaining
-  transmitter components require further development.
+- [ ] RTL Receiver
+    - [x] Cyclic Prefix Remover
+    - [x] FFT
+    - [ ] SFFT
+    - [ ] Channel Equalizer
+    - [ ] QAM Demapper
+    - [ ] Receiver integration
+    - [ ] End-to-End Verification
 
-- **RTL Verification:** Functional testbenches exist for the implemented RTL
-  modules. Additional verification should accompany future module development.
+- [ ] FPGA Development
+    - [x] Vivado project
+    - [x] RTL synthesis
+    - [x] Sythesis
+    - [ ] Bitstream generation
+    - [x] FPGA programming
+    - [ ] Hardware characterization
+    - [ ] Performance evaluation
 
-- **FPGA Synthesis:** The Vivado project serves as the starting point for FPGA
-  implementation and integration of the complete transceiver.
+- [ ] Development Workflow
+    - [x] Pixi environment
+    - [x] Python packaging
+    - [ ] Icarus Verilog automation
+    - [ ] Vivado Tcl integration
+    - [ ] Source-only project generation
+        - [ ] Automated synthesis
+        - [ ] Automated implementation
+        - [ ] Automated bitstream generation
+    - [ ] Reproducible build flow
+    - [ ] Helper utilities
+    - [ ] Quick Start Guide
 
-### Legend
-
-- `[*]` Complete
-- `[.]` In Progress / Partially Complete
-- `[ ]` Planned / Not Started
+- [ ] Documentation
+    - [x] Repository overview
+    - [x] Repository layout
+    - [x] License
+    - [ ] Architecture guide
+    - [ ] Module documentation
+    - [ ] Verification guide
+    - [ ] Development guide
 
  ## Contributing
 
