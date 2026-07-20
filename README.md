@@ -106,15 +106,15 @@ updated as development progresses.
 - [ ] Development Workflow
     - [x] Pixi environment
     - [x] Python packaging
-    - [ ] Icarus Verilog automation
+    - [x] Icarus Verilog automation
     - [ ] Vivado Tcl integration
         - [ ] Source-only project generation
         - [ ] Automated synthesis
         - [ ] Automated implementation
         - [ ] Automated bitstream generation
     - [ ] Reproducible build flow
-    - [ ] Helper utilities
-    - [ ] Quick Start Guide
+    - [x] Helper utilities
+    - [x] Quick Start Guide
 
 - [ ] Documentation
     - [x] Repository overview
@@ -123,7 +123,7 @@ updated as development progresses.
     - [ ] Architecture guide
     - [ ] Module documentation
     - [ ] Verification guide
-    - [ ] Development guide
+    - [x] Development guide
 
 ## Development Notes
 
