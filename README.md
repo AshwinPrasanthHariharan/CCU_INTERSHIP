@@ -1,6 +1,6 @@
-# OTFS FPGA Accelerator
+# OTFS FPGA Baseband
 
-**OTFS FPGA Accelerator** is an open research project providing a Python
+**OTFS FPGA Baseband** is an open research project providing a Python
 reference implementation and a SystemVerilog RTL implementation of an
 orthogonal time frequency space (OTFS) transceiver for FPGA-based
 acceleration. The repository contains the full development flow, from
