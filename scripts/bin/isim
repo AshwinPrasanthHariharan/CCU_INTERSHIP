@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Icarus Verilog Simulation Helper
+#
+# Usage:
+#   isim <testbench>
+#   isim --waves <testbench>
+#   isim --clean
+#   isim --list
+#   isim --help
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+RTL_DIR="$PROJECT_ROOT/rtl/src"
+TB_DIR="$PROJECT_ROOT/rtl/tb"
+BUILD_DIR="$PROJECT_ROOT/build"
+
+mkdir -p "$BUILD_DIR"
+
+# Check dependencies
+
+command -v iverilog >/dev/null 2>&1 || {
+    echo "Error: iverilog not found."
+    exit 1
+}
+
+command -v vvp >/dev/null 2>&1 || {
+    echo "Error: vvp not found."
+    exit 1
+}
+
+# Help
+
+usage() {
+    cat <<EOF
+Usage:
+    isim <testbench>
+    isim --waves <testbench>
+    isim --clean
+
+Options:
+    --clean     Remove all compiled simulation outputs from build/
+                except VCD waveforms
+    --list      List available testbenches
+    --help      Show this help message
+
+Examples:
+    isim tb_qam_mapper
+    isim tb_isfft_chain
+EOF
+}
+
+# List testbenches
+
+list_tb() {
+    echo "Available testbenches:"
+    find "$TB_DIR" -maxdepth 1 -name "tb_*.sv" \
+        -exec basename {} .sv \; | sort
+}
+
+# Argument parsing
+
+case "${1:-}" in
+    --help|-h)
+        usage
+        exit 0
+        ;;
+
+    --list|-l)
+        list_tb
+        exit 0
+        ;;
+
+    --clean|-c)
+        find "$BUILD_DIR" -mindepth 1 ! -name "*.vcd" -exec rm -rf {} +
+        echo "Removed build artifacts except VCD waveforms."
+        exit 0
+        ;;
+
+    --waves|-w)
+        MODE="waves"
+        shift
+        ;;
+
+    "")
+        usage
+        exit 1
+        ;;
+
+    *)
+        MODE="run"
+        ;;
+esac
+
+TB_NAME="${1:-}"
+
+[[ -n "$TB_NAME" ]] || {
+    usage
+    exit 1
+}
+
+TB_FILE="$TB_DIR/${TB_NAME}.sv"
+
+[[ -f "$TB_FILE" ]] || {
+    echo "Error: testbench '$TB_NAME' not found."
+    exit 1
+}
+
+# Collect RTL sources
+
+mapfile -t RTL_FILES < <(
+    find "$RTL_DIR" -name "*.sv" | sort
+)
+
+EXTRA_FILES=()
+TOP_MODULE_ARGS=()
+
+if [[ "$MODE" == "waves" ]]; then
+    WAVE_TOP_FILE="$BUILD_DIR/${TB_NAME}_waves.sv"
+
+    cat > "$WAVE_TOP_FILE" <<EOF
+module waves_top;
+    ${TB_NAME} u_tb();
+
+    initial begin
+        \$dumpfile("$BUILD_DIR/${TB_NAME}.vcd");
+        \$dumpvars(0, u_tb);
+    end
+endmodule
+EOF
+
+    EXTRA_FILES+=("$WAVE_TOP_FILE")
+    TOP_MODULE_ARGS=(-s waves_top)
+fi
+
+# Compile
+
+echo "==> Compiling $TB_NAME"
+
+iverilog \
+    -g2012 \
+    -Wall \
+    "${TOP_MODULE_ARGS[@]}" \
+    -I "$RTL_DIR" \
+    -o "$BUILD_DIR/${TB_NAME}.vvp" \
+    "${RTL_FILES[@]}" \
+    "${EXTRA_FILES[@]}" \
+    "$TB_FILE"
+
+# Run
+
+echo
+echo "==> Running simulation"
+
+(cd "$PROJECT_ROOT/rtl/vectors" && vvp "$BUILD_DIR/${TB_NAME}.vvp")
+
+echo
+echo "Simulation finished."
